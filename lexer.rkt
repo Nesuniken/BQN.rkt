@@ -24,13 +24,15 @@
 (define (bqn-lexer specials)  
   (lexer-srcloc
    [(char-set "+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!")
-    (token 'FUNC-PRIM (string->symbol lexeme))]
+    (token 'FUNC-PRIM (string->symbol (~a "BQN" lexeme)))]
+
+   [#\| (token 'FUNC-PRIM (string->symbol "BQN-PIPE"))]
      
    [(char-set "˙˘¨⌜´˝`")
-    (token '1MOD-PRIM (string->symbol lexeme))]
+    (token '1MOD-PRIM (string->symbol (~a "BQN" lexeme)))]
      
    [(char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")
-    (token '2MOD-PRIM lexeme)]
+    (token '2MOD-PRIM (~a "BQN" lexeme))]
 
    [#\@ (token 'CHARACTER #\null)]
 
@@ -49,7 +51,7 @@
                   (begin
                     (set! quote-count (+ quote-count 1))
                     (equal? (remainder quote-count 2) 1))))])
-      (token 'STRING (list->string (filter quote-removal (string->list lexeme)))))]
+      (token 'STRING (filter quote-removal (string->list lexeme))))]
      
    [(lx/: #\# (lx/* (lx/~ #\newline)))
     (token 'COMMENT (substring lexeme 1) #:skip? #t)]
@@ -65,6 +67,6 @@
 
       (token role (string->symbol (string-replace lexeme "_" ""))))]
 
-   [(char-set "¯_EeIi∞π.•:;?⟨⟩[]()‿⁼˜") (token lexeme)]
+   [(char-set "¯_EeIi∞π.•:;?⟨⟩[]()↩‿⁼˜") (token lexeme)]
    [(lx/: (lx// #\0 #\9) (lx/* (lx/or #\_ (lx// #\0 #\9)))) (token 'INTEGER lexeme)]
    ))
