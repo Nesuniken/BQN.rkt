@@ -1,11 +1,10 @@
 #lang racket
-(require "lexer.rkt" "parser.rkt" brag/support br/syntax)
-(provide #%top #%app #%datum #%top-interaction)
+(require "lexer.rkt" "parser.rkt" br/syntax)
 
 (define (read-syntax path port)
   (define parse-tree (parse path (bqn-tokenizer port path)))
   (strip-bindings
-   #`(module bqn-mod bqn/expander
+   #`(module bqn-mod BQN/expander
        #,parse-tree)
    )
   )

@@ -1,13 +1,28 @@
 #lang racket
 (require
-  data/enumerate/lib
   brag/support
   (prefix-in lx/ br-parser-tools/lex-sre))
 
 (provide bqn-tokenizer)
 
-(define special-subs  (fin/e "{" "𝕨" "𝕤" "𝕩" "𝕗" "𝕘" ":"))
-(define special-funcs (fin/e "{" "𝕎" "𝕊" "𝕏" "𝔽" "𝔾" ":"))
+(define-lex-abbrev int (lx/* (lx/or #\_ (lx// #\0 #\9))))
+(define-lex-abbrev decimal (lx/: (lx/? #\¯) (lx// #\0 #\9) int (lx/? #\. int)))
+(define-lex-abbrev real (lx/: decimal (lx/? (lx/or #\E #\e) (lx/? #\¯) int)))
+
+(define-lex-abbrev sub
+  (lx/: (lx/or #\_ alphabetic) (lx/* (lx/or #\_ alphabetic numeric))))
+(define-lex-abbrev func
+  (lx/: (lx// #\A #\Z) (lx/* (lx/or #\_ alphabetic numeric))))
+(define-lex-abbrev 1mod
+  (lx/: #\_ (lx/* (lx/or #\_ alphabetic numeric))))
+(define-lex-abbrev 2mod
+  (lx/: 1mod #\_))
+
+(define (parse-num str)
+  (string->number (string-replace (string-replace str "_" "") "¯" "-")))
+
+(define (parse-id str)
+  (string->symbol (string-downcase (string-replace str "_" ""))))
 
 (define (bqn-tokenizer port [path #f])
   (port-count-lines! port)
@@ -23,16 +38,16 @@
 
 (define (bqn-lexer specials)  
   (lexer-srcloc
-   [(char-set "+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!")
-    (token 'FUNC-PRIM (string->symbol (~a "BQN" lexeme)))]
+   [(char-set "⍳+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!")
+    (token 'FUNC-LITERAL (string->symbol (~a "BQN" lexeme)))]
 
-   [#\| (token 'FUNC-PRIM (string->symbol "BQN-PIPE"))]
+   [#\| (token 'FUNC-LITERAL (string->symbol "BQN-PIPE"))]
      
-   [(char-set "˙˘¨⌜´˝`")
-    (token '1MOD-PRIM (string->symbol (~a "BQN" lexeme)))]
+   [(char-set "˙˘¨⌜´˝`⁼˜")
+    (token '1MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
      
    [(char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")
-    (token '2MOD-PRIM (~a "BQN" lexeme))]
+    (token '2MOD-LITERAL (~a "BQN" lexeme))]
 
    [#\@ (token 'CHARACTER #\null)]
 
@@ -41,7 +56,7 @@
    [(lx/+ (lx/or #\newline #\, #\⋄)) #\⋄]
      
    [(lx/: #\' any-char #\')
-    (token 'CHARACTER (substring lexeme 1 2))]
+    (token 'CHARACTER (second (string->list lexeme)))]
  
    [(lx/: #\" (lx/* (lx/or (lx/~ #\") (lx/: #\" #\"))) #\")
     (let* ([quote-count -2]
@@ -58,15 +73,34 @@
      
    [whitespace (token lexeme #:skip? #t)]
 
-   [(lx/: (lx/or (lx/>= 2 (lx// #\A #\Z #\a #\z)) (lx/& (lx// #\A #\Z #\a #\z) (lx/~ #\E #\e #\I #\i)))
-          (lx/? (lx/* (lx/or #\_ alphabetic numeric)) (lx/or alphabetic numeric)))
-    (let* ([role
-            (if (char-upper-case? (first (string->list lexeme)))
-                'FUNC-CUSTOM 'SUB-CUSTOM)
-            ])
+   [(lx/: (lx/? #\•) func)
+    (let ([defined-by (if (string-prefix? lexeme "•") 'FUNC-LITERAL 'FUNC-CUSTOM)])
+      (token defined-by (parse-id lexeme)))]
 
-      (token role (string->symbol (string-replace lexeme "_" ""))))]
+   [(lx/: (lx/? #\•) 1mod)
+    (let ([defined-by (if (string-prefix? lexeme "•") '1MOD-LITERAL '1MOD-CUSTOM)])
+      (token defined-by (parse-id lexeme)))]
 
-   [(char-set "¯_EeIi∞π.•:;?⟨⟩[]()↩‿⁼˜") (token lexeme)]
-   [(lx/: (lx// #\0 #\9) (lx/* (lx/or #\_ (lx// #\0 #\9)))) (token 'INTEGER lexeme)]
+   [(lx/: (lx/? #\•) 2mod)
+    (let ([defined-by (if (string-prefix? lexeme "•") '2MOD-LITERAL '2MOD-CUSTOM)])
+      (token defined-by (parse-id lexeme)))]
+
+   [(lx/: (lx/? #\•) sub)
+    (let ([defined-by (if (string-prefix? lexeme "•") 'SUB-LITERAL 'SUB-CUSTOM)])
+      (token defined-by (parse-id lexeme)))]
+
+   [(char-set "←⇐↩¯_.•:;?⟨⟩[]()↩‿⁼˜")
+    (token lexeme (string->symbol lexeme))]
+   
+   [(lx/: (lx/? #\¯) (lx/or #\∞ #\π))
+    (token 'NUMBER (string->symbol lexeme))]
+
+   [real (token 'NUMBER (parse-num lexeme))]
+   
+   [(lx/: real (lx/or #\I #\i) real)
+    (token 'NUMBER
+           (make-rectangular
+            (map parse-num
+                 (string-split
+                  (string-downcase lexeme) "i"))))]
    ))

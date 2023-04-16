@@ -1,8 +1,5 @@
-#lang typed/racket
-(require racket/provide math/array br/macro "primatives.rkt")
-(provide #%top #%app #%datum #%top-interaction
-         (rename-out [bqn-module #%module-begin])
-         (matching-identifiers-out #px"^[^!].+" (all-defined-out)))
+#lang racket
+(require br/macro br/syntax BQN/primatives)
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -39,35 +36,27 @@
 (define-macro (a-merge ELTS ...)
   #'(array-append* '(ELTS ...)))
 
-(define-macro (complex REAL IMAG)
-  #'(make-rectangular REAL IMAG))
+(define-macro-cases sub-literal
+  [(sub-literal (CHARS ...))
+   #'(list->array #[CHARS ...])]
+  [(sub-literal VAL)
+   #'VAL])
 
-(define-macro-cases real
-  [(real ¯ ∞) #'-inf.0]
-  [(real   ∞) #'+inf.0]
-  [(real ¯ ARGS ...)
-   #'(- (real ARGS ...))]
-  [(real π) #'pi]
-  [(real π EXP)
-   #'(* pi (real 1 EXP))]
-  [(real NUM EXP)
-   #'(string->number (~a NUM "e" EXP))])
+(define-macro (atom VAL) #'VAL)
 
-(define-macro (character CHAR)
-  #'(first (string->list CHAR)))
-
-(define-macro (string STR)
-  #'(list->array STR))
-
-(define-macro 2M-Expr  #'expr)
-(define-macro 1M-Expr  #'expr)
-(define-macro FuncExpr #'expr)
-(define-macro subExpr  #'expr)
+(define-macro (2M-Expr ARGS ...)
+  #'(expr ARGS ...))
+(define-macro (1M-Expr ARGS ...)
+  #'(expr ARGS ...))
+(define-macro (FuncExpr ARGS ...)
+  #'(expr ARGS ...))
+(define-macro (subExpr ARGS ...)
+  #'(expr ARGS ...))
 
 (define-macro-cases expr
   [(expr (_ NAME ↩ VALUE))
    #'(begin
-       (set! NAME VALUE)
+       (set! NAME (array-strict VALUE))
        NAME)]
   [(expr (subExpr NAME FUNC ↩))
    #'(subExpr NAME ↩ (FUNC NAME))]
@@ -75,11 +64,17 @@
    #'(subExpr NAME ↩ (FUNC NAME ARG))]
   [(expr (_ VALUE))
    #'VALUE]
+  [(expr VALUE)
+   #'VALUE]
   )
 
 (define-macro (def NAME ← VALUE)
-  #'(define NAME VALUE))
+  #'(define NAME (•strict VALUE)))
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
      EXPR ...))
+
+(provide (all-defined-out)
+         (except-out (all-from-out BQN/primatives) #%module-begin)
+         (rename-out [bqn-module #%module-begin]))

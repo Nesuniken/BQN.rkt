@@ -1,11 +1,32 @@
 #lang typed/racket
-(require math/array br/macro)
+(require math/array br/macro racket/provide)
+(provide
+ #%module-begin #%top #%app #%datum #%top-interaction
+ (all-from-out math/array)
+ (matching-identifiers-out #rx"^BQN" (all-defined-out))
+ (matching-identifiers-out #rx"•" (all-defined-out)))
 
 (define-type (Pv T) (U T (Array (Pv T))))
 (define-type Real-Data (Pv (U Real Char)))
 (define-type Bool (U Zero One))
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))
+
+(array-strictness #f)
+
+(define  ∞ +inf.0)
+(define ¯∞ -inf.0)
+
+(define  π    pi)
+(define ¯π (- pi))
+
+(define (•show x)
+  (display x))
+
+(define (•strict x)
+  (if (array? x)
+      (array-strict x)
+      x))
 
 (define-macro-cases pervasive-func
   [(pervasive-func SELF DYAD)
@@ -30,6 +51,16 @@
           [(array? x)
            (array-map SELF x (array w))]
           [(DYAD x w)])])])
+(: BQN-String (String -> (Array Char)))
+(define (BQN-String str)
+  (let* ([quote-count -2]
+         [quote-removal
+            (λ(c)(or
+                  (not (equal? c #\"))
+                  (begin
+                    (set! quote-count (+ quote-count 1))
+                    (equal? (remainder quote-count 2) 1))))])
+    (list->array (filter quote-removal (string->list str)))))
 
 (: BQN+
    (case->
@@ -197,31 +228,35 @@
   (let ([span : (case-> [One Zero -> Zero] [Zero Zero -> One] [Number Number -> Number]) (λ (x w) (- (+ 1 w) x))])
    (pervasive-func BQN¬ (λ (x) (span x 0)) span)))
 
+(: BQN⍳ (Real Real -> Number))
+(define (BQN⍳ x [w 0])
+  (make-rectangular w x))
+
 (: BQN×
    (case->
-    [Number -> Number]
-    [Number Number -> Number]))
+    [(Pv Number) -> (Pv Number)]
+    [(Pv Number) (Pv Number) -> (Pv Number)]))
 (define BQN×
   (let ([sign (lambda ([x : Number]) (if (real? x) (sgn x) (/ x (magnitude x))))])
     (pervasive-func BQN× sign *)))
 
 (: BQN÷
    (case->
-    [Number -> Number]
-    [Number Number -> Number]))
+    [(Pv Number) -> (Pv Number)]
+    [(Pv Number) (Pv Number) -> (Pv Number)]))
 (define BQN÷ (pervasive-func BQN÷ / (swap /)))
 
 (: BQN√
    (case->
-    [Number -> Number]
-    [Number Number -> Number]))
+    [(Pv Number) -> (Pv Number)]
+    [(Pv Number) (Pv Number) -> (Pv Number)]))
 (define BQN√
   (pervasive-func BQN√ sqrt (λ (x w) (expt x (/ w)))))
 
 (: BQN-PIPE
    (case->
-    [Number -> Nonnegative-Real]
-    [Integer Integer -> Integer]))
+    [(Pv Number) -> (Pv Nonnegative-Real)]
+    [(Pv Integer) (Pv Integer) -> (Pv Integer)]))
 (define BQN-PIPE
   (pervasive-func BQN-PIPE magnitude (swap modulo)))
 
@@ -239,25 +274,3 @@
   (if (array? x)
       (array-flatten x)
       (array x)))
-
-(define-macro-cases BQN⥊
-  [(BQN⥊ X) #'(deshape X)]
-  [(BQN⥊ X (strand ARGS ...))
-   #'((id-reshape const (ARGS ...) ()) X)]
-  [(BQN⥊ X (a-list ARGS ...))
-   #'((id-reshape const (ARGS ...) ()) X)]
-  )
-
-(define-macro-cases id-reshape
-  [(id-reshape ID ((subExpr S) REST-ARGS ...) (DIMS ...))
-   #'(id-reshape ID (REST-ARGS ...) ((subExpr S) DIMS ...))]
-  [(id-reshape ID ((atom A) REST-ARGS ...) (DIMS ...))
-   #'(id-reshape ID (REST-ARGS ...) ((atom A) DIMS ...))]
-  [(id-reshape const ((Func ID) REST-ARGS ...) (DIMS ...))
-   #'(id-reshape ID (REST-ARGS ...) ($ DIMS ...))]
-  
-  [(id-reshape const () (DIMS ...))
-   #'(lambda (A) (array-reshape A #(DIMS ...)))]
-  [(id-reshape ID () (DIMS ...))
-   #'(calc-reshape ID DIMS ...)]
-  )
