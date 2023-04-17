@@ -14,6 +14,11 @@
 (define  π    pi)
 (define ¯π (- pi))
 
+(define (•strict x)
+  (if (array? x)
+      (array-strict x)
+      x))
+
 (define (•show x)
   (display x))
 
