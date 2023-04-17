@@ -30,6 +30,9 @@
 
 (define-macro a-list #'strand)
 
+(define-macro (a-merge ELTS ...)
+  #'(BQN> (strand ELTS ...)))
+
 (define-macro (strand ELTS ...)
   #'(array #[ELTS ...]))
 

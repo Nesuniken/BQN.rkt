@@ -61,7 +61,7 @@
          (lambda (x w)
            (cond
              [(char? w)
-              (if (exact-integer? x)
+              (if (integer? x)
                   (integer->char (+ x (- (char->integer w))))
                   (- (char->integer x) (char->integer w)))]
              [(number? w)
@@ -106,19 +106,25 @@
   
   (pv-dyad (λ (x w) (if (test (compare x w) 0) 1 0))))
 
-(define (BQN≤ x w)
-  (pv-compare <=))
+(define BQN≤ (pv-compare <=))
 
 (define BQN<
   (case-lambda
     [(x) (array x)]
     [(x w) ((pv-compare <) x w)]))
 
-(define (BQN> x w)
-  ((pv-compare >) x w))
+(define BQN>
+  (case-lambda
+    [(x) (let ([inner-check (array-map array? x)]
+               [x-list (array->list x)])
+           (cond
+             [(array-all-and inner-check)
+              (array-append* x-list)]
+             [(not (array-all-or inner-check))
+              (array-append* (map BQN< x))]))]
+    [(x w) ((pv-compare >) x w)]))
 
-(define BQN≥
-  (pv-compare >=))
+(define BQN≥ (pv-compare >=))
 
 (define BQN⌊
   (let ([bqn-min
@@ -155,7 +161,6 @@
 
 (define (BQN⍳ x [w 0])
   (make-rectangular w x))
-
 
 (define BQN×
   (let ([sign (lambda (x) (if (real? x) (sgn x) (/ x (magnitude x))))])
