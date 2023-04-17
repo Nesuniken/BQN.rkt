@@ -33,9 +33,6 @@
 (define-macro (strand ELTS ...)
   #'(array #[ELTS ...]))
 
-(define-macro (a-merge ELTS ...)
-  #'(array-append* '(ELTS ...)))
-
 (define-macro-cases sub-literal
   [(sub-literal (CHARS ...))
    #'(list->array #[CHARS ...])]
@@ -73,6 +70,7 @@
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
+     (array-strictness #f)
      EXPR ...))
 
 (provide (all-defined-out)
