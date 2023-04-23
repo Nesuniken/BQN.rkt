@@ -42,8 +42,10 @@
     (token 'FUNC-LITERAL (string->symbol (~a "BQN" lexeme)))]
 
    [#\| (token 'FUNC-LITERAL (string->symbol "BQN-PIPE"))]
+
+   [#\` (token '1MOD-LITERAL (string->symbol "BQN-GRAVE"))]
      
-   [(char-set "˙˘¨⌜´˝`⁼˜")
+   [(char-set "˙˘¨⌜´˝⁼˜")
     (token '1MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
      
    [(char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")

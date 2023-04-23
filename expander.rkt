@@ -1,6 +1,9 @@
 #lang racket
 (require br/macro br/syntax BQN/primatives)
 
+(define-macro (BQN⁼ F)
+  #'(suffix-id F "⁼"))
+
 (define-macro-cases Derv
   [(Derv F) #'F]
   [(Derv F (1Mod 1M)  ) #'(1M F  )]
@@ -38,7 +41,7 @@
 
 (define-macro-cases sub-literal
   [(sub-literal (CHARS ...))
-   #'(list->array #[CHARS ...])]
+   #'(array #[CHARS ...])]
   [(sub-literal VAL)
    #'VAL])
 
@@ -56,7 +59,7 @@
 (define-macro-cases expr
   [(expr (_ NAME ↩ VALUE))
    #'(begin
-       (set! NAME (array-strict VALUE))
+       (set! NAME (•strict VALUE))
        NAME)]
   [(expr (subExpr NAME FUNC ↩))
    #'(subExpr NAME ↩ (FUNC NAME))]
@@ -68,8 +71,13 @@
    #'VALUE]
   )
 
-(define-macro (def NAME ← VALUE)
-  #'(define NAME (•strict VALUE)))
+(define-macro-cases def
+  [(def NAME ⇐ VALUE)
+   #'(begin
+       (provide NAME)
+       (def NAME ← VALUE))]
+  [(def NAME ← VALUE)
+   #'(define NAME (•strict VALUE))])
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin

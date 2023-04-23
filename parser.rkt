@@ -2,7 +2,7 @@
 # Mostly adaptated from the offical specification
 ; https://mlochbaum.github.io/BQN/spec/grammar.html
 
-#()? and [] are equivalent
+#(...)? and [...] are equivalent
 
 # @ and / are used to hide nodes
 ; that aren't needed after parsing
@@ -10,15 +10,17 @@
 
 program : [stmt] (/"⋄" ([stmt] | /nothing))*
 @stmt   : expr | def
-expr   : subExpr
-       | Func
-       | 1Mod
-       | 2Mod
+expr    : subExpr
+        | Func
+        | 1Mod
+        | 2Mod
 
-def : 2MOD-CUSTOM "←" 2M-Expr
-    | 1MOD-CUSTOM "←" 1M-Expr
-    | FUNC-CUSTOM "←" FuncExpr
-    | SUB-CUSTOM  "←" subExpr
+@assign: "←" | "⇐"
+
+def : 2MOD-CUSTOM assign 2M-Expr
+    | 1MOD-CUSTOM assign 1M-Expr
+    | FUNC-CUSTOM assign FuncExpr
+    | SUB-CUSTOM  assign subExpr
 
 2Mod : [atom /"."] 2MOD-CUSTOM | 2MOD-LITERAL | /"(" (@2Mod    | 2M-Expr)  /")"  
 1Mod : [atom /"."] 1MOD-CUSTOM | 1MOD-LITERAL | /"(" (@1Mod    | 1M-Expr)  /")"  
@@ -26,16 +28,16 @@ Func : [atom /"."] FUNC-CUSTOM | FUNC-LITERAL | /"(" (@Func    | FuncExpr) /")"
 atom : [atom /"."] SUB-CUSTOM  | sub-literal  | /"(" (@subject | subExpr)  /")" | a-list | a-merge 
 
 a-list   : /"⟨" /["⋄"] [(expr /"⋄")* expr /["⋄"]] /"⟩"
-a-merge : /"[" /["⋄"]  (expr /"⋄")* expr /["⋄"]  /"]"
+a-merge  : /"[" /["⋄"]  (expr /"⋄")* expr /["⋄"]  /"]"
 
-any     : atom | Func | 1Mod | 2Mod
-strand  : @any (/"‿" @any)+
+any      : atom | Func | 1Mod | 2Mod
+strand   : @any (/"‿" @any)+
 @subject : @atom | strand
 
 2M-Expr : 2Mod | 2MOD-CUSTOM "↩" 2M-Expr
 1M-Expr : 1Mod | 1MOD-CUSTOM "↩" 1M-Expr
 
-Derv     : @Func |  Operand 1Mod | Operand 2Mod (subject | Func)
+Derv     : @Func |  Operand @1Mod | Operand @2Mod (subject | Func)
 @Operand : subject | Derv
 Fork     : Derv  | (Operand | /nothing) Derv Fork
 Train    : @Fork  | Derv Fork
