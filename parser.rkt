@@ -8,7 +8,7 @@
 ; that aren't needed after parsing
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
-program : /["⋄"] (stmt /"⋄")* stmt /["⋄"]
+program : [stmt] (/"⋄" [stmt])*
 @stmt   : def | expr
 expr    : subExpr
         | FuncExpr
