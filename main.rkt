@@ -1,5 +1,5 @@
 #lang racket
-(require "lexer.rkt" "parser.rkt" br/syntax)
+(require BQN/lexer BQN/parser brag/support br/syntax)
 
 (define (read-syntax path port)
   (define parse-tree (parse path (bqn-tokenizer port path)))

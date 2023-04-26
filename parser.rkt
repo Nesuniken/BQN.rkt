@@ -8,12 +8,12 @@
 ; that aren't needed after parsing
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
-program : [stmt] (/"⋄" ([stmt] | /nothing))*
-@stmt   : expr | def
+program : /["⋄"] (stmt "⋄")* stmt /["⋄"]
+@stmt   : def | expr
 expr    : subExpr
-        | Func
-        | 1Mod
-        | 2Mod
+        | FuncExpr
+        | 1M-Expr
+        | 2M-Expr
 
 @assign: "←" | "⇐"
 
@@ -22,10 +22,14 @@ def : 2MOD-CUSTOM assign 2M-Expr
     | FUNC-CUSTOM assign FuncExpr
     | SUB-CUSTOM  assign subExpr
 
-2Mod : [atom /"."] 2MOD-CUSTOM | 2MOD-LITERAL | /"(" (@2Mod    | 2M-Expr)  /")"  
-1Mod : [atom /"."] 1MOD-CUSTOM | 1MOD-LITERAL | /"(" (@1Mod    | 1M-Expr)  /")"  
-Func : [atom /"."] FUNC-CUSTOM | FUNC-LITERAL | /"(" (@Func    | FuncExpr) /")"  
-atom : [atom /"."] SUB-CUSTOM  | sub-literal  | /"(" (@subject | subExpr)  /")" | a-list | a-merge 
+2Mod : [atom /"."] 2MOD-CUSTOM | 2MOD-LITERAL | 2M-block
+     | /"(" (@2Mod    | 2M-Expr)  /")"  
+1Mod : [atom /"."] 1MOD-CUSTOM | 1MOD-LITERAL | 1M-block
+     | /"(" (@1Mod    | 1M-Expr)  /")"  
+Func : [atom /"."] FUNC-CUSTOM | FUNC-LITERAL | FuncBlock
+     | /"(" (@Func    | FuncExpr) /")"  
+atom : [atom /"."] SUB-CUSTOM  | sub-literal  | subBlock
+     | /"(" (@subject | subExpr)  /")" | a-list | a-merge 
 
 a-list   : /"⟨" /["⋄"] [(expr /"⋄")* expr /["⋄"]] /"⟩"
 a-merge  : /"[" /["⋄"]  (expr /"⋄")* expr /["⋄"]  /"]"
@@ -48,3 +52,12 @@ nothing     : [subject |  nothing] Derv nothing | NOTHING
 subExpr     : @subject | arg | SUB-CUSTOM "↩" subExpr | SUB-CUSTOM Derv "↩" [subExpr]
           
 sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
+
+body : /["⋄"] (stmt /"⋄" | expr /["⋄"] "?" /["⋄"])* stmt /["⋄"]
+
+/block : /"{" body (/";" body)*
+
+FuncBlock : @block /FUNC-BLOCK
+1M-block  : block (1M-IMMEDIATE | 1M-DELAYED)
+2M-block  : block (2M-IMMEDIATE | 2M-DELAYED)
+subBlock  : @block /SUB-BLOCK

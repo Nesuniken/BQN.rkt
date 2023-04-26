@@ -1,8 +1,16 @@
 #lang racket
-(require br/macro br/syntax BQN/primatives)
+(require br/macro br/syntax BQN/primatives racket/undefined)
+(require (for-syntax br/syntax))
 
 (define-macro (BQN⁼ F)
   #'(suffix-id F "⁼"))
+
+(define-syntax (BQN⍟ stx)
+  (syntax-case stx ()
+    [(_ F g)
+     (if (identifier-binding (suffix-id #'F "⁼"))
+         #'(repeat F g (suffix-id F "⁼"))
+         #'(repeat F g))]))
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -31,7 +39,8 @@
   [(arg W F X) #'(F X W)]
   )
 
-(define-macro a-list #'strand)
+(define-macro a-list  #'strand)
+(define-macro subBlock #'begin)
 
 (define-macro (a-merge ELTS ...)
   #'(BQN> (strand ELTS ...)))
@@ -46,6 +55,26 @@
    #'VAL])
 
 (define-macro (atom VAL) #'VAL)
+
+(define-macro (FuncBlock BODIES ...)
+  #'(letrec ([𝕤 (λ (x [w undefined]) (begin BODIES ...))])
+      𝕤))
+
+(define-macro-cases 1M-block
+  [(1M-block (BODIES ...) 𝕤)
+   #'(letrec ([𝕣 (λ (𝕗) (begin BODIES ...))])
+       𝕣)]
+  [(1M-block (BODIES ...) 𝕊)
+   #'(letrec ([𝕣 (λ (𝕗) (FuncBlock BODIES ...))])
+       𝕣)])
+
+(define-macro-cases 2M-block
+  [(2M-block (BODIES ...) 𝕤)
+   #'(letrec ([𝕣 (λ (𝕗 𝕘) (begin BODIES ...))])
+       𝕣)]
+  [(2M-block (BODIES ...) 𝕊)
+   #'(letrec ([𝕣 (λ (𝕗 𝕘) (FuncBlock BODIES ...))])
+       𝕣)])
 
 (define-macro (2M-Expr ARGS ...)
   #'(expr ARGS ...))
@@ -76,6 +105,20 @@
    #'(begin
        (provide NAME)
        (def NAME ← VALUE))]
+  [(def NAME ← (FuncBlock BODIES ...))
+   #'(define (NAME 𝕩 [𝕨 undefined])
+       (define 𝕤 NAME)
+       BODIES ...)]
+  [(def NAME ← (1M-block (block BODIES ...) 𝕤))
+   #'(define (NAME 𝕗)
+       (define 𝕣 NAME)
+       BODIES ...)]
+  [(def NAME ← (M-BLOCK (BODIES ...) 𝕊))
+   #'(def NAME ← (M-BLOCK (FuncBlock BODIES ...) 𝕤))]
+  [(def NAME ← (2M-block (BODIES ...) 𝕤))
+   #'(define (NAME 𝕗 𝕘)
+       (define 𝕣 NAME)
+       BODIES ...)]
   [(def NAME ← VALUE)
    #'(define NAME (•strict VALUE))])
 

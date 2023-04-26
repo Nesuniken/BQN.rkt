@@ -545,3 +545,20 @@
          [(w) (F w cell)]
          [cell]))))
   )
+
+(define/match (repeat F g [F-INVERSE #f])
+  [(_ (? array?) _)
+   (case-lambda
+     [(x  ) (array-map (λ (g*) ((repeat F g* F-INVERSE) x  )) g)]
+     [(x w) (array-map (λ (g*) ((repeat F g* F-INVERSE) x w)) g)])]
+  [(_ (? procedure?) _)
+   (λ (x w) ((repeat F (g x w) F-INVERSE)))]
+  [(_ (? positive?) _)
+   (letrec ([loop
+             (case-lambda
+               [(n x  ) (if (> n 1) (F (loop (- n 1) x  )  ) (F x))]
+               [(n x w) (if (> n 1) (F (loop (- n 1) x w) w) (F x w))])])
+     (curry loop g))]
+  [(_ (? negative?) (? procedure?))
+   (repeat F-INVERSE (- g) F)]
+  [(_ 0 _) BQN⊢])
