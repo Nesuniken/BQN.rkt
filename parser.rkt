@@ -17,9 +17,9 @@ expr    : subExpr
 
 @assign: "←" | "⇐"
 
-def : 2MOD-CUSTOM assign 2M-Expr
-    | 1MOD-CUSTOM assign 1M-Expr
-    | FUNC-CUSTOM assign FuncExpr
+def : 2MOD-CUSTOM assign (2M-block | 2M-Expr)
+    | 1MOD-CUSTOM assign (1M-block | 1M-Expr)
+    | FUNC-CUSTOM assign (FuncBlock | FuncExpr)
     | SUB-CUSTOM  assign subExpr
 
 2Mod : [atom /"."] 2MOD-CUSTOM | 2MOD-LITERAL | 2M-block
@@ -42,7 +42,7 @@ strand   : @any (/"‿" @any)+
 1M-Expr : 1Mod | 1MOD-CUSTOM "↩" 1M-Expr
 
 Derv     : @Func |  Operand @1Mod | Operand @2Mod (subject | Func)
-@Operand : subject | Derv
+@Operand : subject | @Func | Derv
 Fork     : Derv  | (Operand | /nothing) Derv Fork
 Train    : @Fork  | Derv Fork
 FuncExpr : Train | FUNC-CUSTOM "↩" FuncExpr
@@ -53,11 +53,9 @@ subExpr     : @subject | arg | SUB-CUSTOM "↩" subExpr | SUB-CUSTOM Derv "↩" 
           
 sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
 
-body : /["⋄"] (stmt /"⋄" | expr /["⋄"] "?" /["⋄"])* stmt /["⋄"]
+body : /"{" (stmt /"⋄")* stmt /["⋄"]
 
-/block : /"{" body (/";" body)*
-
-FuncBlock : @block /FUNC-BLOCK
-1M-block  : block (1M-IMMEDIATE | 1M-DELAYED)
-2M-block  : block (2M-IMMEDIATE | 2M-DELAYED)
-subBlock  : @block /SUB-BLOCK
+FuncBlock : body /FUNC-BLOCK
+1M-block  : body  1M-BLOCK
+2M-block  : body  2M-BLOCK
+subBlock  : body /SUB-BLOCK

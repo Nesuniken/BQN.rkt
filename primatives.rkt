@@ -216,12 +216,12 @@
     [(x)   x]
     [(x w) w]))
 
-(define BQN⊣⁼ BQN⊢)
-
 (define BQN⊢
   (case-lambda
     [(x)   x]
     [(x w) x]))
+
+(define BQN⊣⁼ BQN⊢)
 
 (define BQN⊢⁼ BQN⊢)
 

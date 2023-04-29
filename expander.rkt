@@ -1,21 +1,15 @@
 #lang racket
-(require br/macro br/syntax BQN/primatives racket/undefined)
+(require br/macro BQN/primatives racket/undefined)
 (require (for-syntax br/syntax))
 
 (define-macro (BQN⁼ F)
-  #'(suffix-id F "⁼"))
-
-(define-syntax (BQN⍟ stx)
-  (syntax-case stx ()
-    [(_ F g)
-     (if (identifier-binding (suffix-id #'F "⁼"))
-         #'(repeat F g (suffix-id F "⁼"))
-         #'(repeat F g))]))
+  (with-pattern ([INVERSE (suffix-id #'F '⁼)])
+    #'INVERSE))
 
 (define-macro-cases Derv
   [(Derv F) #'F]
-  [(Derv F (1Mod 1M)  ) #'(1M F  )]
-  [(Derv F (2Mod 2M) G) #'(2M F G)]
+  [(Derv F 1M  ) #'(1M F  )]
+  [(Derv F 2M G) #'(2M F G)]
   )
 
 (define-macro Fork #'Train)
@@ -40,7 +34,9 @@
   )
 
 (define-macro a-list  #'strand)
+
 (define-macro subBlock #'begin)
+(define-macro body     #'begin)
 
 (define-macro (a-merge ELTS ...)
   #'(BQN> (strand ELTS ...)))
@@ -56,24 +52,28 @@
 
 (define-macro (atom VAL) #'VAL)
 
-(define-macro (FuncBlock BODIES ...)
-  #'(letrec ([𝕤 (λ (x [w undefined]) (begin BODIES ...))])
-      𝕤))
+(define-macro-cases FuncBlock
+  [(FuncBlock BODY 𝕊1)
+   #'(letrec ([𝕤 (λ (x) BODY)])
+       𝕤)]
+  [(FuncBlock BODY 𝕊2)
+   #'(letrec ([𝕤 (λ (x w) BODY)])
+       𝕤)])
 
 (define-macro-cases 1M-block
-  [(1M-block (BODIES ...) 𝕤)
-   #'(letrec ([𝕣 (λ (𝕗) (begin BODIES ...))])
+  [(1M-block BODY 𝕤)
+   #'(letrec ([𝕣 (λ (𝕗) BODY)])
        𝕣)]
-  [(1M-block (BODIES ...) 𝕊)
-   #'(letrec ([𝕣 (λ (𝕗) (FuncBlock BODIES ...))])
+  [(1M-block BODY 𝕊)
+   #'(letrec ([𝕣 (λ (𝕗) (FuncBlock BODY))])
        𝕣)])
 
 (define-macro-cases 2M-block
-  [(2M-block (BODIES ...) 𝕤)
-   #'(letrec ([𝕣 (λ (𝕗 𝕘) (begin BODIES ...))])
+  [(2M-block BODY 𝕤)
+   #'(letrec ([𝕣 (λ (𝕗 𝕘) BODY)])
        𝕣)]
-  [(2M-block (BODIES ...) 𝕊)
-   #'(letrec ([𝕣 (λ (𝕗 𝕘) (FuncBlock BODIES ...))])
+  [(2M-block BODY 𝕊)
+   #'(letrec ([𝕣 (λ (𝕗 𝕘) (FuncBlock BODY))])
        𝕣)])
 
 (define-macro (2M-Expr ARGS ...)
@@ -105,20 +105,24 @@
    #'(begin
        (provide NAME)
        (def NAME ← VALUE))]
-  [(def NAME ← (FuncBlock BODIES ...))
-   #'(define (NAME 𝕩 [𝕨 undefined])
+  [(def NAME ← (FuncBlock (body STMTS ...) 𝕊1))
+   #'(define (NAME 𝕩)
        (define 𝕤 NAME)
-       BODIES ...)]
-  [(def NAME ← (1M-block (block BODIES ...) 𝕤))
+       STMTS ...)]
+  [(def NAME ← (FuncBlock (body STMTS ...) 𝕊2))
+   #'(define (NAME 𝕩 𝕨)
+       (define 𝕤 NAME)
+       STMTS ...)]
+  [(def NAME ← (1M-block (body STMTS ...) 𝕤))
    #'(define (NAME 𝕗)
        (define 𝕣 NAME)
-       BODIES ...)]
-  [(def NAME ← (M-BLOCK (BODIES ...) 𝕊))
-   #'(def NAME ← (M-BLOCK (FuncBlock BODIES ...) 𝕤))]
-  [(def NAME ← (2M-block (BODIES ...) 𝕤))
+       STMTS ...)]
+  [(def NAME ← (2M-block (body STMTS ...) 𝕤))
    #'(define (NAME 𝕗 𝕘)
        (define 𝕣 NAME)
-       BODIES ...)]
+       STMTS ...)]
+  [(def NAME ← (M-BLOCK BODY RET-VAL))
+   #'(def NAME ← (M-BLOCK (FuncBlock BODY RET-VAL) 𝕤))]
   [(def NAME ← VALUE)
    #'(define NAME (•strict VALUE))])
 

@@ -49,9 +49,10 @@
 
     (define role
       (case special-downcase
-        [(𝕨 𝕤 𝕩) 2]
-        [(𝕗) 3]
-        [(𝕘) 9]))
+        [(𝕤 𝕩) 2]
+        [(𝕨)   4]
+        [(𝕗)   3]
+        [(𝕘)   9]))
 
     (match (unbox specials)
       [(list) (error (~a "Special name " lexeme " found outside block"))]
@@ -130,12 +131,15 @@
          (set-box! specials outer-blocks)
 
          (case current-block
-           [(1)  (token 'SUB-BLOCK)]
-           [(2)  (token 'FUNC-BLOCK)]
-           [(3)  (token '1M-IMMEDIATE '𝕤)]
-           [(6)  (token '1M-DELAYED   '𝕊)]
-           [(9)  (token '2M-IMMEDIATE '𝕤)]
-           [(18) (token '2M-DELAYED   '𝕊)]
+           [( 1) (token 'SUB-BLOCK)]
+           [( 2) (token 'FUNC-BLOCK '𝕊1)]
+           [( 4) (token 'FUNC-BLOCK '𝕊2)]
+           [( 3) (token '1M-BLOCK   '𝕤)]
+           [( 6) (token '1M-BLOCK   '𝕊1)]
+           [(12) (token '1M-BLOCK   '𝕊2)]
+           [( 9) (token '2M-BLOCK   '𝕤)]
+           [(18) (token '2M-BLOCK   '𝕊1)]
+           [(36) (token '2M-BLOCK   '𝕊2)]
            ))])]
 
    [(lx/: (lx/? #\•) func)
