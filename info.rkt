@@ -1,2 +1,2 @@
 #lang info
-(define license "MIT")
+(define license 'MIT)
