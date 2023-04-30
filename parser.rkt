@@ -55,7 +55,7 @@ sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
 
 body : /"{" (stmt /"⋄")* stmt /["⋄"]
 
-FuncBlock : body /FUNC-BLOCK
+FuncBlock : body  FUNC-BLOCK
 1M-block  : body  1M-BLOCK
 2M-block  : body  2M-BLOCK
 subBlock  : body /SUB-BLOCK

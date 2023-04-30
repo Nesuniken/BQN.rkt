@@ -1,6 +1,19 @@
 #lang racket
-(require br/macro BQN/primatives racket/undefined)
+(require br/macro BQN/primatives racket/stxparam)
 (require (for-syntax br/syntax))
+
+(define-syntax-parameter 𝕣
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+(define-syntax-parameter 𝕘
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+(define-syntax-parameter 𝕗
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+(define-syntax-parameter 𝕤
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+(define-syntax-parameter 𝕨
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+(define-syntax-parameter 𝕩
+  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
 
 (define-macro (BQN⁼ F)
   (with-pattern ([INVERSE (suffix-id #'F '⁼)])
@@ -54,27 +67,51 @@
 
 (define-macro-cases FuncBlock
   [(FuncBlock BODY 𝕊1)
-   #'(letrec ([𝕤 (λ (x) BODY)])
-       𝕤)]
+   (with-syntax ([(S X) (generate-temporaries '(𝕤 𝕩))])
+     #'(letrec
+           ([S (lambda (X)
+                 (syntax-parameterize
+                     ([𝕤 (make-rename-transformer #'S)]
+                      [𝕩 (make-rename-transformer #'X)])
+                   BODY))])
+         S))]
   [(FuncBlock BODY 𝕊2)
-   #'(letrec ([𝕤 (λ (x w) BODY)])
-       𝕤)])
+   (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
+     #'(letrec
+           ([S (lambda (X W)
+                 (syntax-parameterize
+                     ([𝕤 (make-rename-transformer #'S)]
+                      [𝕩 (make-rename-transformer #'X)]
+                      [𝕨 (make-rename-transformer #'W)])
+                   BODY))])
+         S))])
 
 (define-macro-cases 1M-block
-  [(1M-block BODY 𝕤)
-   #'(letrec ([𝕣 (λ (𝕗) BODY)])
-       𝕣)]
-  [(1M-block BODY 𝕊)
-   #'(letrec ([𝕣 (λ (𝕗) (FuncBlock BODY))])
-       𝕣)])
+  [(1M-block BODY 𝕊0)
+   (with-syntax ([(R F) (generate-temporaries '(𝕣 𝕗))])
+     #'(letrec
+           ([R (lambda (F)
+                 (syntax-parameterize
+                     ([𝕣 (make-rename-transformer #'R)]
+                      [𝕗 (make-rename-transformer #'F)])
+                   BODY))])
+         R))]
+  [(1M-block BODY RET-TYPE)
+   #'(1M-block (FuncBlock BODY RET-TYPE) 𝕊0)])
 
 (define-macro-cases 2M-block
-  [(2M-block BODY 𝕤)
-   #'(letrec ([𝕣 (λ (𝕗 𝕘) BODY)])
-       𝕣)]
-  [(2M-block BODY 𝕊)
-   #'(letrec ([𝕣 (λ (𝕗 𝕘) (FuncBlock BODY))])
-       𝕣)])
+  [(2M-block BODY 𝕊0)
+   (with-syntax ([(R F G) (generate-temporaries '(𝕣 𝕗 𝕘))])
+     #'(letrec
+           ([R (lambda (F G)
+                 (syntax-parameterize
+                     ([𝕣 (make-rename-transformer #'R)]
+                      [𝕗 (make-rename-transformer #'F)]
+                      [𝕘 (make-rename-transformer #'G)])
+                   BODY))])
+         R))]
+  [(2M-block BODY RET-TYPE)
+   #'(2M-block (FuncBlock BODY RET-TYPE) 𝕊0)])
 
 (define-macro (2M-Expr ARGS ...)
   #'(expr ARGS ...))
@@ -105,24 +142,6 @@
    #'(begin
        (provide NAME)
        (def NAME ← VALUE))]
-  [(def NAME ← (FuncBlock (body STMTS ...) 𝕊1))
-   #'(define (NAME 𝕩)
-       (define 𝕤 NAME)
-       STMTS ...)]
-  [(def NAME ← (FuncBlock (body STMTS ...) 𝕊2))
-   #'(define (NAME 𝕩 𝕨)
-       (define 𝕤 NAME)
-       STMTS ...)]
-  [(def NAME ← (1M-block (body STMTS ...) 𝕤))
-   #'(define (NAME 𝕗)
-       (define 𝕣 NAME)
-       STMTS ...)]
-  [(def NAME ← (2M-block (body STMTS ...) 𝕤))
-   #'(define (NAME 𝕗 𝕘)
-       (define 𝕣 NAME)
-       STMTS ...)]
-  [(def NAME ← (M-BLOCK BODY RET-VAL))
-   #'(def NAME ← (M-BLOCK (FuncBlock BODY RET-VAL) 𝕤))]
   [(def NAME ← VALUE)
    #'(define NAME (•strict VALUE))])
 
