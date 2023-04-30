@@ -2,8 +2,8 @@
 (require math/array racket/provide racket/function racket/vector racket/list)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define (BQN˙ F)
-  (const F))
+(define (BQN˙ f)
+  (const f))
 
 (define (BQN˜ F)
   (case-lambda

@@ -1,7 +1,8 @@
 #lang racket/base
 (require math/array racket/provide racket/list racket/match racket/function
          (only-in BQN/primatives BQN⊑ BQN⊢))
-(provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
+(provide (matching-identifiers-out #rx"^BQN" (all-defined-out))
+         (matching-identifiers-out #rx"•" (all-defined-out)))
 
 (define (BQN∘ F G)
   (compose1 F G))
@@ -39,13 +40,13 @@
     [(x  ) (with-handlers ([exn:fail? (λ (e) (λ (x  ) (G x  )))]) (F x  ))]
     [(x w) (with-handlers ([exn:fail? (λ (e) (λ (x w) (G x w)))]) (F x w))]))
 
-(define/match (repeat F g [F-INVERSE #f])
+(define/match (•repeat F g [F-INVERSE #f])
   [(_ (? array?) _)
    (case-lambda
-     [(x  ) (array-map (λ (g*) ((repeat F g* F-INVERSE) x  )) g)]
-     [(x w) (array-map (λ (g*) ((repeat F g* F-INVERSE) x w)) g)])]
+     [(x  ) (array-map (λ (g*) ((•repeat F g* F-INVERSE) x  )) g)]
+     [(x w) (array-map (λ (g*) ((•repeat F g* F-INVERSE) x w)) g)])]
   [(_ (? procedure?) _)
-   (λ (x w) ((repeat F (g x w) F-INVERSE)))]
+   (λ (x w) ((•repeat F (g x w) F-INVERSE)))]
   [(_ (? positive?) _)
    (letrec ([loop
              (case-lambda
@@ -53,5 +54,5 @@
                [(n x w) (if (> n 1) (F (loop (- n 1) x w) w) (F x w))])])
      (curry loop g))]
   [(_ (? negative?) (? procedure?))
-   (repeat F-INVERSE (- g) F)]
+   (•repeat F-INVERSE (- g) F)]
   [(_ 0 _) BQN⊢])
