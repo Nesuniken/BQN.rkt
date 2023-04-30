@@ -1,5 +1,8 @@
 #lang racket
-(require br/macro BQN/primatives racket/stxparam)
+(require math/array br/macro racket/stxparam
+         BQN/primatives BQN/arithmetic
+         BQN/1-modifiers BQN/2-modifiers
+         BQN/system-values)
 (require (for-syntax br/syntax))
 
 (define-syntax-parameter 𝕣
@@ -150,6 +153,8 @@
      (array-strictness #f)
      EXPR ...))
 
-(provide (all-defined-out)
-         (except-out (all-from-out BQN/primatives) #%module-begin)
-         (rename-out [bqn-module #%module-begin]))
+(provide
+ #%top #%app #%datum #%top-interaction
+ (all-defined-out)
+ (all-from-out BQN/primatives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
+ (rename-out [bqn-module #%module-begin]))
