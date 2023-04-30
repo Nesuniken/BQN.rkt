@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 (require math/array racket/provide)
 (provide (matching-identifiers-out #rx"•" (all-defined-out)))
 (define (•promote x)

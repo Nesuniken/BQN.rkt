@@ -1,5 +1,5 @@
-#lang racket
-(require math/array racket/provide
+#lang racket/base
+(require math/array racket/provide racket/list racket/vector racket/set
          (only-in BQN/arithmetic BQN> BQN≠))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 

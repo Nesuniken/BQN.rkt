@@ -1,5 +1,5 @@
-#lang racket
-(require math/array racket/provide
+#lang racket/base
+(require math/array racket/provide racket/list racket/match racket/function
          (only-in BQN/primatives BQN⊑ BQN⊢))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 

@@ -1,5 +1,10 @@
-#lang racket
+#lang racket/base
 (require
+  racket/string
+  racket/function
+  racket/match
+  racket/format
+  racket/list
   data/enumerate/lib
   brag/support
   (prefix-in lx/ br-parser-tools/lex-sre))

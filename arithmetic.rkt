@@ -1,5 +1,5 @@
-#lang racket
-(require math/array racket/provide)
+#lang racket/base
+(require math/array racket/provide racket/math racket/list)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))

@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 (require BQN/lexer BQN/parser brag/support br/syntax)
 
 (define (read-syntax path port)
