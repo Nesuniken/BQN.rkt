@@ -173,7 +173,7 @@
    
    [(lx/: real (lx/or #\I #\i) real)
     (token 'NUMBER
-           (make-rectangular
+           (apply make-rectangular
             (map parse-num
                  (string-split
                   (string-downcase lexeme) "i"))))]
