@@ -255,5 +255,5 @@
 
 (define (BQN! x [w "Assertion error"])
   (if (equal? x 1)
-      (error w)
-      x))
+      1
+      (error w)))
