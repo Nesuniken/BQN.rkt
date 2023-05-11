@@ -1,6 +1,6 @@
 #lang racket/base
 (require math/array racket/provide racket/list racket/match racket/function
-         (only-in BQN/primatives BQN⊑ BQN⊢))
+         (only-in BQN/primitives BQN⊑ BQN⊢))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out))
          (matching-identifiers-out #rx"•" (all-defined-out)))
 

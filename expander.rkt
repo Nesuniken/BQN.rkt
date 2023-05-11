@@ -1,6 +1,6 @@
 #lang racket
 (require math/array br/macro racket/stxparam
-         BQN/primatives BQN/arithmetic
+         BQN/primitives BQN/arithmetic
          BQN/1-modifiers BQN/2-modifiers
          BQN/system-values)
 (require (for-syntax br/syntax))
@@ -156,5 +156,5 @@
 (provide
  #%top #%app #%datum #%top-interaction
  (all-defined-out)
- (all-from-out BQN/primatives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
+ (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
  (rename-out [bqn-module #%module-begin]))
