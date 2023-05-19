@@ -1,5 +1,5 @@
 #lang racket/base
-(require math/array racket/provide racket/math racket/list)
+(require math/array racket/match racket/provide racket/math racket/list)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))
@@ -24,15 +24,23 @@
        (array-map (pv-dyad dyad) x (array w))]
       [(dyad x w)])))
 
-(define (pv-func monad dyad [id #f])
-  (if id
-      (case-lambda
-        [() id]
-        [(x)   ((pv-monad monad) x)]
-        [(x w) ((pv-dyad   dyad) x w)])
-      (case-lambda
-        [(x)   ((pv-monad monad) x)]
-        [(x w) ((pv-dyad   dyad) x w)])))
+(define/match ((pv-func arities) #:undo? [undo? #f] . args)
+  [((vector (and (not #f) ids) _ _) u? (list))
+   ((pv-func ids) #:undo? u?)]
+  [((vector _ (and (not #f) monads) _ ...) u? (list x))
+   ((pv-func monads) x #:undo? u?)]
+  [((vector _ _ (and (not #f) dyads)) u? (list x w))
+   ((pv-func dyads) x w #:undo? u?)]
+  
+  [((cons f f-inv) u? _)
+   (apply (pv-func (if u? f-inv f)) args)]
+
+  [(id #f (list)) id]
+  [(f  #f (list x))
+   ((pv-monad f) x)]
+  [(f  #f (list x w))
+   ((pv-dyad f) x w)]
+  )
 
 (define (add x w)
   (cond
@@ -52,16 +60,21 @@
     [(number? w)
      (- w x)]))
 
-(define BQN+
-  (pv-func conjugate add 0))
+(define/match (BQN+ #:undo? [undo? #f] . args)
+  [(_ (list)) 0]
+  [(_ (list x))
+   ((pv-monad conjugate) x)]
+  [(#f (list x w))
+   ((pv-dyad add) x w)]
+  [(#t (list x w))
+   ((pv-dyad subtract) x w)])
 
-(define BQN+⁼
-  (pv-func conjugate (swap subtract) 0))
-
-(define BQN-
-    (pv-func - subtract 0))
-
-(define BQN-⁼ BQN-)
+(define/match (BQN- #:undo? [undo? #f] . args)
+  [(_ (list)) 0]
+  [(_ (list x))
+   ((pv-monad -) x)]
+  [(_ (list x w))
+   ((pv-dyad subtract) x w)])
 
 (define (pv-equal test) 
   (pv-dyad (λ (x w) (if (test x w) 1 0))))
@@ -139,7 +152,7 @@
              [(and (char? x) (char? w))
               (if (char<? x w) x w)]
              [w]))])
-    (pv-func floor bqn-min -inf.0)))
+    (pv-func (vector -inf.0 floor bqn-min))))
 
 (define BQN⌈
   (let ([bqn-max
@@ -152,42 +165,37 @@
              [(and (char? x) (char? w))
               (if (char>? x w) x w)]
              [x]))])
-    (pv-func ceiling bqn-max +inf.0)))
+    (pv-func (vector +inf.0 ceiling bqn-max))))
 
 (define BQN∧
-  (pv-dyad *))
+  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
 
-(define (BQN¬ x [w 0])
-  (- (+ 1 w) x))
+(define BQN∨ (pv-dyad (λ (x w) (- (+ x w) (* x w)))))
 
-(define BQN¬⁼ BQN¬)
+(define (BQN¬ [x 0] [w 0] #:undo? [undo? #f])
+  ((pv-dyad (λ (x* w*)(- (+ 1 w*) x*))) x w))
 
 (define (BQN⍳ x [w 0])
   (make-rectangular w x))
 
 (define BQN×
-  (let ([sign (lambda (x) (if (equal? x 0) 0 (/ 1 (magnitude x))))])
-    (pv-func sign * 1)))
+  (let ([sign (lambda (x) (if (equal? x 0) 0 (/ x (magnitude x))))])
+    (pv-func (vector 1 sign (cons * /)))))
 
-(define (BQN×⁼ x w)
-  (pv-dyad /))
-
-(define BQN÷ (pv-func / (swap /)))
-
-(define BQN÷⁼ BQN÷)
+(define/match (BQN÷ #:undo? [undo? #f] . args)
+  [(_ (list x))
+   ((pv-monad /) x)]
+  [(_ (list x w))
+   ((pv-dyad (swap /)) x w)])
 
 (define BQN√
-  (pv-func sqrt (λ (x w) (expt x (/ w)))))
-
-(define BQN√⁼
-  (pv-func (λ (x  ) (* x x))
-           (λ (x w) (expt w x))))
+  (pv-func
+   (vector #f
+           (cons sqrt (λ (x) (* x x)))
+           (cons (λ (x w) (expt x (/ w))) (swap expt)))))
 
 (define BQN⋆
-  (pv-func exp (swap expt) 1))
-
-(define BQN⋆⁼
-  (pv-func log log))
+  (pv-func (vector 1 (cons exp log) (cons (swap expt) log))))
 
 (define BQN-PIPE
-  (pv-func magnitude (swap modulo)))
+  (pv-func (vector #f magnitude (swap modulo))))

@@ -3,19 +3,11 @@
          (only-in BQN/arithmetic BQN> BQN≠))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define BQN⊣
-  (case-lambda
-    [(x)   x]
-    [(x w) w]))
+(define (BQN⊣ x [w #f])
+  (if w w x))
 
-(define BQN⊢
-  (case-lambda
-    [(x)   x]
-    [(x w) x]))
-
-(define BQN⊣⁼ BQN⊢)
-
-(define BQN⊢⁼ BQN⊢)
+(define (BQN⊢ x [w #f] #:undo? [undo? #f])
+  x)
 
 (define (deshape x)
   (if (array? x)
@@ -111,31 +103,22 @@
 (define (rotate-range start length)
   (map (λ (n) (modulo n length)) (range start (+ start length))))
 
-(define BQN⌽
-  (case-lambda
-    [(x)   (array-slice-ref x (list (:: #f #f -1) ::...))]
-    [(x w)
-     (let ([slices
-            (vector->list
-             (vector-map rotate-range (array->vector w) (array-shape x)))])
-       (array-slice-ref x (pad-slices slices)))]))
+(define (BQN⌽ x [w #f] #:undo? [undo? #f])
+  (if (not w)
+      (array-slice-ref x (list (:: #f #f -1) ::...))
+      (if undo?
+          (BQN⌽ x (array-map - w))
+          (let ([slices
+                 (vector->list
+                  (vector-map rotate-range (array->vector w) (array-shape x)))])
+            (array-slice-ref x (pad-slices slices))))))
 
-(define BQN⌽⁼
-  (case-lambda
-    [(x)   (BQN⌽ x)]
-    [(x w) (BQN⌽ x (array-map - w))]))
-
-(define BQN⍉
-  (case-lambda
-    [(x) (array-axis-permute x (rotate-range 1 (array-dims x)))]
-    [(x w) (let ([w-list (array->list w)])
-             (array-axis-permute
-              x (append w-list (remove* w-list (range (array-dims x))))))]
-    ))
-
-(define BQN⍉⁼
-  (case-lambda
-    [(x) (array-axis-permute x (rotate-range -1 (array-dims x)))]))
+(define (BQN⍉ x [w #f] #:undo? [undo? #f])
+  (if (not w)
+      (array-axis-permute x (rotate-range (if undo? -1 1) (array-dims x)))
+      (let ([w-list (array->list w)])
+        (array-axis-permute
+         x (append w-list (remove* w-list (range (array-dims x))))))))
 
 (define BQN/
   (case-lambda
@@ -187,10 +170,12 @@
 
 (define (prog-index x w)
   (define stacks (make-hash))
+  
   (for ([k (in-array-axis w)] [v (in-naturals)])
     (if (hash-has-key? stacks k)
         (hash-update! stacks k (λ (l) (cons v l)))
         (hash-set! k (list v))))
+  
   (for/array ([k (in-array-axis x)])
     (cond
       [(hash-ref stacks k #f)
@@ -198,8 +183,8 @@
             (begin
               (if (empty? (rest v))
                   (hash-remove! stacks k)
-                  (hash-update! stacks rest))
-              v))]
+                  (hash-update! stacks k rest))
+              (first v)))]
       [(BQN≠ w)])))
 
 (define BQN⊒
@@ -227,31 +212,6 @@
 (define BQN⍷
   (case-lambda
     [(x) (list->array (unique x))]))
-
-(define (group x w)
-  (define w-lists
-    (array-map
-     (lambda (n)
-       (if (array? w)
-           (array->list w)
-           (list w)))
-     w))
-  (define (max-shape a b)
-    (cond
-      [(empty? a) b]
-      [(empty? b) a]
-      [(cons (max a b) (max-shape (rest a) (rest b)))]))
-  (define shape '())
-  
-  (define group-hash
-    (for/hash ([k (in-array w)] [v (in-array-axis x)])
-      (set! shape (max-shape shape k))
-      (values (list->vector k) v)))
-  
-  (build-array
-   (list->vector shape)
-   (λ (i) (hash-ref group-hash i (array #[]))))
-  )
 
 (define (BQN! x [w "Assertion error"])
   (if (equal? x 1)

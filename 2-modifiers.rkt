@@ -1,29 +1,44 @@
 #lang racket/base
-(require math/array racket/provide racket/list racket/match racket/function
-         (only-in BQN/primitives BQN⊑ BQN⊢))
-(provide (matching-identifiers-out #rx"^BQN" (all-defined-out))
-         (matching-identifiers-out #rx"•" (all-defined-out)))
+(require math/array racket/undefined racket/provide racket/list racket/match racket/function 
+         (only-in BQN/primitives BQN⊑ BQN⊢)
+         (only-in BQN/1-modifiers BQN˜))
+(provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define (BQN∘ F G)
-  (compose1 F G))
+(define (undo F [undo? #t])
+  (curry F #:undo? undo?))
 
-(define (BQN○ F G)
-  (case-lambda
-    [(x)   (F (G x))]
-    [(x w) (F (G x) (G w))]))
+(define ((BQN∘ F G) #:undo? [undo? #f] . args)
+  (if undo?
+      (apply (compose1 (undo G) (undo F)) args)
+      (apply (compose1 F G)  args)))
 
-(define (BQN⊸ F G)
-  (if (procedure? F)
-      (case-lambda [(x) (G x (F x))] [(x w) (G x (F w))])
-      (lambda (x) (G x F))))
+(define ((BQN○ F G) #:undo? [undo? #f] . args)
+  (if undo?
+      ((undo G) (apply (undo F) (first args) (map G (rest args))))
+      (apply F (map G args))))
 
-(define (BQN⟜ F G)
-  (if (procedure? G)
-      (case-lambda [(x) (F (G x) x)] [(x w) (F (G x) w)])
-      (lambda (w) (F G w))))
+(define/match ((BQN⊸ F G) #:undo? [undo? #f] . args)
+  [((? procedure?) _ _ (list x w))
+   (G x (F w) #:undo? undo?)]
+  [((? procedure?) _ #f (list x))
+   (G x (F x))]
+  [((not (? procedure?)) _ _ (list x))
+   (G x F #:undo? undo?)])
 
-(define (BQN⊘ F G)
-  (case-lambda [(x) (F x)] [(x w) (G x w)]))
+(define/match ((BQN⟜ F G) #:undo? [undo? #f] . args)
+  [(_ (not (? procedure?)) #f (list x))
+   (F G x)]
+  [(_ (not (? procedure?)) #t (list x))
+   ((compose1 undo BQN˜ F) x)]
+  [(_ (? procedure?) #f _)
+   (F (G (first args)) (last args))]
+  [(_ (? procedure?) #t (list x w))
+   (apply (BQN∘ F G) x w #:undo? #t)])
+
+(define ((BQN⊘ F G) x [w undefined] #:undo? [undo? #f])
+  (if (equal? w undefined)
+      (F x   #:undo? undo?)
+      (G x w #:undo? undo?)))
 
 (define (apply-choice choice)
   (if (equal? (array-size choice) 1)
@@ -40,19 +55,16 @@
     [(x  ) (with-handlers ([exn:fail? (λ (e) (λ (x  ) (G x  )))]) (F x  ))]
     [(x w) (with-handlers ([exn:fail? (λ (e) (λ (x w) (G x w)))]) (F x w))]))
 
-(define/match (•repeat F g [F-INVERSE #f])
-  [(_ (? array?) _)
-   (case-lambda
-     [(x  ) (array-map (λ (g*) ((•repeat F g* F-INVERSE) x  )) g)]
-     [(x w) (array-map (λ (g*) ((•repeat F g* F-INVERSE) x w)) g)])]
-  [(_ (? procedure?) _)
-   (λ (x w) ((•repeat F (g x w) F-INVERSE)))]
-  [(_ (? positive?) _)
-   (letrec ([loop
-             (case-lambda
-               [(n x  ) (if (> n 1) (F (loop (- n 1) x  )  ) (F x))]
-               [(n x w) (if (> n 1) (F (loop (- n 1) x w) w) (F x w))])])
-     (curry loop g))]
-  [(_ (? negative?) (? procedure?))
-   (•repeat F-INVERSE (- g) F)]
-  [(_ 0 _) BQN⊢])
+(define/match ((BQN⍟ F g) #:undo? [undo? #f] . args)
+  [(_ (? array?) _ _)
+   (array-map (λ (g*) (apply (BQN⍟ F g*) args)) g)]
+  [(_ (? procedure?) _ _)
+   (apply (BQN⍟ F (apply g args)) args)]
+  [(_ 0 _ _) (first args)]
+  [(_ (? integer?) #t _)
+   (apply (BQN⍟ F (- g)) args)]
+  [(_ (? exact-positive-integer?) #f _)
+   (for/fold ([out (first args)]) ([r (in-range g)])
+     (F out (rest args)))]
+  [(_ (? negative?) #f _)
+   (apply (BQN⍟ (curry #:undo? #t) (- g)) args)])

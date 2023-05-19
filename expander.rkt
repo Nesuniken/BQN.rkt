@@ -18,10 +18,6 @@
 (define-syntax-parameter 𝕩
   (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
 
-(define-macro (BQN⁼ F)
-  (with-pattern ([INVERSE (suffix-id #'F '⁼)])
-    #'INVERSE))
-
 (define-macro-cases Derv
   [(Derv F) #'F]
   [(Derv F 1M  ) #'(1M F  )]
@@ -34,9 +30,7 @@
   [(Train   T) #'T]
   
   [(Train   T R)
-   #'(case-lambda
-       [(x  ) (T (R x  ))]
-       [(x w) (T (R x w))])]
+   #'(BQN∘  T R)]
   
   [(Train L T R)
    #'(case-lambda
@@ -153,8 +147,16 @@
      (array-strictness #f)
      EXPR ...))
 
+(define (to-func x)
+  (if (procedure? x)
+      x
+      (const x)))
+
+(define-macro (bqn-app ID ARGS ...)
+  #'((to-func ID) ARGS ...))
+
 (provide
- #%top #%app #%datum #%top-interaction
+ #%top #%datum #%top-interaction
  (all-defined-out)
  (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
- (rename-out [bqn-module #%module-begin]))
+ (rename-out [bqn-module #%module-begin] [bqn-app #%app]))
