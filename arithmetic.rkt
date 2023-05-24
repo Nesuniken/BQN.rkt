@@ -142,14 +142,6 @@
              [x]))])
      ((pv-dyad bqn-max) x w))])
 
-(define BQN∧
-  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
-
-(define (BQN∨ x w #:undo? [undo? #f])
-  (if undo?
-      (undo-error #\∨)
-      (pv-dyad (λ (x w) (- (+ x w) (* x w))))))
-
 (define (BQN¬ [x 0] [w 0] #:undo? [undo? #f])
   ((pv-dyad (λ (x* w*)(- (+ 1 w*) x*))) x w))
 
@@ -179,3 +171,11 @@
 
 (define BQN-PIPE
   (pv-func (vector #f magnitude (swap modulo))))
+
+(define BQN∧
+  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
+
+(define (BQN∨ x w #:undo? [undo? #f])
+  (if undo?
+      (undo-error #\∨)
+      (pv-dyad (λ (x w) (- (+ x w) (* x w))))))

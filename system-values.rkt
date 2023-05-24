@@ -9,6 +9,9 @@
       (array-strict x)
       x))
 
+(define (•time x)
+  (time x))
+
 (define (•show x)
   (display x))
 
