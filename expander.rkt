@@ -1,5 +1,5 @@
 #lang racket
-(require math/array br/macro racket/stxparam
+(require racket/match math/array br/macro racket/stxparam
          BQN/primitives BQN/arithmetic
          BQN/1-modifiers BQN/2-modifiers
          BQN/system-values BQN/prim-utils)
@@ -28,6 +28,9 @@
 
 (define-macro-cases Train
   [(Train   T) #'T]
+
+  [(Train nothing T R)
+   #'(BQN∘ T R)]
   
   [(Train   T R)
    #'(BQN∘  T R)]
@@ -39,6 +42,7 @@
   )
 
 (define-macro-cases arg
+  [(arg nothing F X) #'(F X)]
   [(arg   F X) #'(F X)]
   [(arg W F X) #'(F X W)]
   )
@@ -60,18 +64,28 @@
   [(sub-literal VAL)
    #'VAL])
 
-(define-macro (atom VAL) #'VAL)
+(define-macro (atom X) #'X)
+(define-macro (Func F) #'F)
 
 (define-macro (FuncBlock BODY)
-   (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
-     #'(letrec
-           ([S (lambda (X W #:undo? [undo? #f])
-                 (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)]
-                      [𝕨 (make-rename-transformer #'W)])
-                   (if undo? (error "block isn't invertable") BODY)))])
-         S)))
+  (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
+    #'(letrec
+          ([S (lambda (#:undo? [undo? #f] . args)
+                (match* (undo? args)
+                  [(#t _) (error "Block functions are not invertable")]
+                  [(#f (list X))
+                   (syntax-parameterize
+                       ([𝕤 (make-rename-transformer #'S)]
+                        [𝕩 (make-rename-transformer #'X)]
+                        [𝕨 (make-rename-transformer #'void)])
+                     BODY)]
+                  [(#f (list X W))
+                   (syntax-parameterize
+                       ([𝕤 (make-rename-transformer #'S)]
+                        [𝕩 (make-rename-transformer #'X)]
+                        [𝕨 (make-rename-transformer #'W)])
+                     BODY)]))])
+        S)))
 
 (define-macro-cases 1M-block
   [(1M-block BODY 𝕤)
@@ -110,10 +124,12 @@
   #'(expr ARGS ...))
 
 (define-macro-cases expr
-  [(expr (_ NAME ↩ VALUE))
+  [(expr NAME ↩ VALUE)
    #'(begin
        (set! NAME (•strict VALUE))
        NAME)]
+  [(expr (_ NAME ↩ VALUE))
+   #'(expr NAME ↩ VALUE)]
   [(expr (subExpr NAME FUNC ↩))
    #'(subExpr NAME ↩ (FUNC NAME))]
   [(expr (subExpr NAME FUNC ↩ ARG))
@@ -142,8 +158,10 @@
       x
       (const x)))
 
-(define-macro (bqn-app ID ARGS ...)
-  #'((to-func ID) ARGS ...))
+(define-macro-cases bqn-app
+  [(bqn-app ID X void) #'(bqn-app ID X)]
+  [(bqn-app ID ARGS ...)
+   #'((to-func ID) ARGS ...)])
 
 (provide
  #%top #%datum #%top-interaction

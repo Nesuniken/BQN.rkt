@@ -14,12 +14,14 @@
 (define-lex-abbrev decimal (lx/: (lx/? #\¯) (lx// #\0 #\9) int (lx/? #\. int)))
 (define-lex-abbrev real (lx/: decimal (lx/? (lx/or #\E #\e) (lx/? #\¯) int)))
 
+(define-lex-abbrev non-special (lx/- alphabetic (char-set "𝕎𝕨𝕊𝕤𝕏𝕩𝔽𝕗𝔾𝕘")))
+
 (define-lex-abbrev sub
-  (lx/: (lx/or #\_ alphabetic) (lx/* (lx/or #\_ alphabetic numeric))))
+  (lx/: (lx/or #\_ alphabetic) (lx/* (lx/or #\_ non-special numeric))))
 (define-lex-abbrev func
-  (lx/: (lx// #\A #\Z) (lx/* (lx/or #\_ alphabetic numeric))))
+  (lx/: (lx// #\A #\Z) (lx/* (lx/or #\_ non-special numeric))))
 (define-lex-abbrev 1mod
-  (lx/: #\_ (lx/* (lx/or #\_ alphabetic numeric))))
+  (lx/: #\_ (lx/* (lx/or #\_ non-special numeric))))
 (define-lex-abbrev 2mod
   (lx/: 1mod #\_))
 
@@ -78,7 +80,7 @@
     (token '1MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
      
    [(char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")
-    (token '2MOD-LITERAL (~a "BQN" lexeme))]
+    (token '2MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
 
    [#\@ (token 'CHARACTER #\null)]
 
