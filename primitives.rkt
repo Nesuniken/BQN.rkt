@@ -156,7 +156,7 @@
 
 (define (⊐hash seq)
   (for/hash ([k seq] [v (in-naturals)])
-    (values k v)))
+            (values k v)))
 
 (define/match (BQN⊐ #:undo? [undo? #f] . args)
   [(#t _) (undo-error #\⊐)]
@@ -181,9 +181,9 @@
   (define stacks (make-hash))
   
   (for ([k (in-array-axis w)] [v (in-naturals)])
-    (if (hash-has-key? stacks k)
-        (hash-update! stacks k (λ (l) (cons v l)))
-        (hash-set! k (list v))))
+       (if (hash-has-key? stacks k)
+           (hash-update! stacks k (λ (l) (cons v l)))
+           (hash-set! k (list v))))
   
   (for/array ([k (in-array-axis x)])
              (cond

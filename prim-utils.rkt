@@ -1,5 +1,5 @@
-#lang racket
-(require racket/function racket/match math/array br/macro)
+#lang racket/base
+(require racket/function racket/match math/array)
 (provide (all-defined-out))
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))

@@ -62,17 +62,7 @@
 
 (define-macro (atom VAL) #'VAL)
 
-(define-macro-cases FuncBlock
-  [(FuncBlock BODY 𝕊1)
-   (with-syntax ([(S X) (generate-temporaries '(𝕤 𝕩))])
-     #'(letrec
-           ([S (lambda (X)
-                 (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)])
-                   BODY))])
-         S))]
-  [(FuncBlock BODY 𝕊2)
+(define-macro (FuncBlock BODY)
    (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
      #'(letrec
            ([S (lambda (X W #:undo? [undo? #f])
@@ -81,10 +71,10 @@
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'W)])
                    (if undo? (error "block isn't invertable") BODY)))])
-         S))])
+         S)))
 
 (define-macro-cases 1M-block
-  [(1M-block BODY 𝕊0)
+  [(1M-block BODY 𝕤)
    (with-syntax ([(R F) (generate-temporaries '(𝕣 𝕗))])
      #'(letrec
            ([R (lambda (F)
@@ -93,11 +83,11 @@
                       [𝕗 (make-rename-transformer #'F)])
                    BODY))])
          R))]
-  [(1M-block BODY RET-TYPE)
-   #'(1M-block (FuncBlock BODY RET-TYPE) 𝕊0)])
+  [(1M-block BODY 𝕊)
+   #'(1M-block (FuncBlock BODY) 𝕤)])
 
 (define-macro-cases 2M-block
-  [(2M-block BODY 𝕊0)
+  [(2M-block BODY 𝕤)
    (with-syntax ([(R F G) (generate-temporaries '(𝕣 𝕗 𝕘))])
      #'(letrec
            ([R (lambda (F G)
@@ -107,8 +97,8 @@
                       [𝕘 (make-rename-transformer #'G)])
                    BODY))])
          R))]
-  [(2M-block BODY RET-TYPE)
-   #'(2M-block (FuncBlock BODY RET-TYPE) 𝕊0)])
+  [(2M-block BODY 𝕊)
+   #'(2M-block (FuncBlock BODY) 𝕤)])
 
 (define-macro (2M-Expr ARGS ...)
   #'(expr ARGS ...))
