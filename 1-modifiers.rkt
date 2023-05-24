@@ -1,5 +1,5 @@
 #lang racket/base
-(require math/array racket/match racket/undefined racket/provide racket/function racket/vector racket/list)
+(require math/array racket/match racket/undefined racket/provide racket/function racket/vector racket/list BQN/prim-utils)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define ((BQN⁼ F) #:undo? [undo? #f] . args)
@@ -13,7 +13,7 @@
       (F w x #:undo? undo?)))
 
 (define ((BQN¨ F) #:undo? [undo? #f] . args)
-  (apply array-map (curry F #:undo? undo?) args))
+  (apply array-map (undo F undo?) args))
 
 (define ((cells F) x)
   (for/array #:shape (array-shape x)
@@ -21,7 +21,7 @@
     (F major)))
 
 (define/match ((BQN˘ F) #:undo? [undo? #f] . args)
-  [(_ #t _) (BQN˘ (curry F #:undo? #t) args)]
+  [(_ #t _) (BQN˘ (undo F) args)]
   [(_ #f (list x)) ((cells F) x)]
   [(_ #f (list x w))
    (for/array #:shape (array-shape x)
@@ -30,7 +30,7 @@
 
 (define ((BQN⌜ F) x [w undefined] #:undo? [undo? #f])
   (if (equal? w undefined)
-      ((cells (curry F #:undo? (not undo?)) x))
+      ((cells (undo F (not undo?)) x))
       (for*/array #:shape (vector-append (array-shape x) (array-shape w))
        ([xn (in-array x)] [wn (in-array w)])
        (F xn wn))))

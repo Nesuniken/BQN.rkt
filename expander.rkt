@@ -2,21 +2,21 @@
 (require math/array br/macro racket/stxparam
          BQN/primitives BQN/arithmetic
          BQN/1-modifiers BQN/2-modifiers
-         BQN/system-values)
+         BQN/system-values BQN/prim-utils)
 (require (for-syntax br/syntax))
 
 (define-syntax-parameter 𝕣
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕘
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕗
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕤
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕨
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕩
-  (λ (stx) (raise-syntax-error #f "Special characters are illegal outside of a block" stx)))
+  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -75,12 +75,12 @@
   [(FuncBlock BODY 𝕊2)
    (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
      #'(letrec
-           ([S (lambda (X W)
+           ([S (lambda (X W #:undo? [undo? #f])
                  (syntax-parameterize
                      ([𝕤 (make-rename-transformer #'S)]
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'W)])
-                   BODY))])
+                   (if undo? (error "block isn't invertable") BODY)))])
          S))])
 
 (define-macro-cases 1M-block

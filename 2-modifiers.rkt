@@ -1,11 +1,8 @@
 #lang racket/base
-(require math/array racket/undefined racket/provide racket/list racket/match racket/function 
+(require math/array racket/undefined racket/provide racket/list racket/match racket/function BQN/prim-utils
          (only-in BQN/primitives BQN⊑ BQN⊢)
          (only-in BQN/1-modifiers BQN˜))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
-
-(define (undo F [undo? #t])
-  (curry F #:undo? undo?))
 
 (define ((BQN∘ F G) #:undo? [undo? #f] . args)
   (if undo?
