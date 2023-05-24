@@ -58,7 +58,7 @@
   [(_ (? procedure?) _ _)
    (apply (BQN⍟ F (apply g args)) args)]
   [(_ 0 _ _) (first args)]
-  [(_ 1 _ _) (F args)]
+  [(_ 1 _ _) (apply F args)]
   [(_ (? integer?) #t _)
    (apply (BQN⍟ F (- g)) args)]
   [(_ (? exact-positive-integer?) #f _)
