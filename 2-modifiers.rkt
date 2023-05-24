@@ -59,11 +59,10 @@
    (apply (BQN⍟ F (apply g args)) args)]
   [(_ 0 _ _) (first args)]
   [(_  1 #f _) (apply F args)]
-  [(_ -1 #f _) (apply (undo F) args)]
   [(_ (? integer?) #t _)
    (apply (BQN⍟ F (- g)) args)]
   [(_ (? exact-positive-integer?) #f _)
    (for/fold ([out (first args)]) ([r (in-range g)])
      (F out (rest args)))]
   [(_ (? negative?) #f _)
-   (apply (BQN⍟ (curry #:undo? #t) (- g)) args)])
+   (apply (BQN⍟ (undo F) (- g)) args)])
