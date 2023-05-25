@@ -77,7 +77,7 @@
     (cond
       [(equal? w x) 0]
       [(real? x)
-       (if (real? w) (exact-truncate (- w x)) 1)]
+       (if (real? w) (- w x) 1)]
       [(char? x)
        (if (char? w) (- (char->integer w) (char->integer x)) -1)]))
   

@@ -63,6 +63,6 @@
    (apply (BQN⍟ F (- g)) args)]
   [(_ (? exact-positive-integer?) #f _)
    (for/fold ([out (first args)]) ([r (in-range g)])
-     (F out (rest args)))]
+     (apply F out (rest args)))]
   [(_ (? negative?) #f _)
    (apply (BQN⍟ (undo F) (- g)) args)])

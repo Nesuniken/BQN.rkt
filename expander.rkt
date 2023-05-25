@@ -49,8 +49,9 @@
 
 (define-macro a-list  #'strand)
 
-(define-macro subBlock #'begin)
-(define-macro body     #'begin)
+(define-macro subBlock #'body)
+(define-macro (body STMTS ...)
+  #'((thunk STMTS ...)))
 
 (define-macro (a-merge ELTS ...)
   #'(BQN> (strand ELTS ...)))
@@ -124,7 +125,7 @@
   #'(expr ARGS ...))
 
 (define-macro-cases expr
-  [(expr NAME ↩ VALUE)
+  [(expr (subExpr NAME ↩ VALUE))
    #'(begin
        (set! NAME (•strict VALUE))
        NAME)]
@@ -134,6 +135,8 @@
    #'(subExpr NAME ↩ (FUNC NAME))]
   [(expr (subExpr NAME FUNC ↩ ARG))
    #'(subExpr NAME ↩ (FUNC NAME ARG))]
+  [(expr NAME ↩ VALUE)
+   #'(begin (set! NAME VALUE) NAME)]
   [(expr (_ VALUE))
    #'VALUE]
   [(expr VALUE)

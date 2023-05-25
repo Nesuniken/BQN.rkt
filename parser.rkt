@@ -9,13 +9,15 @@
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
 program : [stmt] (/"⋄" [stmt])*
-@stmt   : def | expr
+@stmt   : macro | def | expr
 expr    : subExpr
         | FuncExpr
         | 1M-Expr
         | 2M-Expr
 
 @assign: "←" | "⇐"
+
+/macro : "•Trace" FUNC-CUSTOM 
 
 def : 2MOD-CUSTOM assign (2M-block | 2M-Expr)
     | 1MOD-CUSTOM assign (1M-block | 1M-Expr)
@@ -48,8 +50,9 @@ Train    : @Fork  | Derv Fork
 FuncExpr : Train | FUNC-CUSTOM "↩" FuncExpr
 
 arg         : [subject | nothing] Derv subExpr 
-nothing     : [subject |  nothing] Derv nothing | NOTHING
+nothing     : [subject | nothing] Derv nothing | NOTHING
 subExpr     : @subject | arg | SUB-CUSTOM "↩" subExpr | SUB-CUSTOM Derv "↩" [subExpr]
+
           
 sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
 
@@ -58,4 +61,4 @@ body : /"{" (stmt /"⋄")* stmt /["⋄"]
 FuncBlock : body /FUNC-BLOCK
 1M-block  : body  (1M-IMMEDIATE | 1M-DELAYED)
 2M-block  : body  (2M-IMMEDIATE | 2M-DELAYED)
-subBlock  : body /SUB-BLOCK
+subBlock  : @body /SUB-BLOCK

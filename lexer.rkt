@@ -144,6 +144,9 @@
            [(18) (token '2M-DELAYED   '𝕊)]
            ))])]
 
+   [(lx/or "•Trace")
+    (token lexeme (parse-id lexeme))]
+
    [(lx/: (lx/? #\•) func)
     (let ([defined-by (if (string-prefix? lexeme "•") 'FUNC-LITERAL 'FUNC-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
