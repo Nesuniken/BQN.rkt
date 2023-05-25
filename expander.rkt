@@ -73,17 +73,28 @@
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
 
-(define/match ((make-block monad dyad) #:undo? [undo? #f] . args)
-  [( _  _ #t  _)         (error "Block functions are not invertable")]
-  [(#f  _  _ (list _  )) (error "Block is dyadic only")]
-  [( _ #f  _ (list _ _)) (error "Block is monadic only")]
-  [( _  _ #f (list x  )) (monad x)]
-  [( _  _ #f (list x w)) (dyad  x w)])
+(define ((make-dyad-block dyad) x w #:undo? [undo? #f])
+  (if undo?
+      (error "Block functions are not invertable")
+      (dyad x w)))
+
+(define ((make-monad-block monad) x #:undo? [undo? #f])
+  (if undo?
+      (error "Block functions are not invertable")
+      (monad x)))
+
+(define (make-func-block monad dyad)
+  (lambda (#:undo? [undo? #f] . args)
+    (if undo?
+        (error "Block functions are not invertable")
+        (case-lambda
+          [(x  ) (monad x)]
+          [(x w) (dyad  x w)]))))
 
 (define-macro (FuncBlock BODY)
   (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
     #'(letrec
-          ([S (make-block
+          ([S (make-func-block
                (lambda (X)
                  (syntax-parameterize
                      ([𝕤 (make-rename-transformer #'S)]
