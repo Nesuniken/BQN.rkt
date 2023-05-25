@@ -9,15 +9,15 @@
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
 program : [stmt] (/"⋄" [stmt])*
-@stmt   : macro | def | expr
+@stmt   : rkt | def | expr
 expr    : subExpr
         | FuncExpr
         | 1M-Expr
         | 2M-Expr
 
-@assign: "←" | "⇐"
+rkt : RKT stmt* /"}"
 
-/macro : "•Trace" FUNC-CUSTOM 
+@assign: "←" | "⇐"
 
 def : 2MOD-CUSTOM assign (2M-block | 2M-Expr)
     | 1MOD-CUSTOM assign (1M-block | 1M-Expr)

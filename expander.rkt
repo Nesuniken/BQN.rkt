@@ -3,7 +3,7 @@
          BQN/primitives BQN/arithmetic
          BQN/1-modifiers BQN/2-modifiers
          BQN/system-values BQN/prim-utils)
-(require (for-syntax br/syntax))
+
 
 (define-syntax-parameter 𝕣
   (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
@@ -17,6 +17,9 @@
   (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 (define-syntax-parameter 𝕩
   (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
+
+(define-macro (rkt NAME STMTS ...)
+  #'(NAME STMTS ...))
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -173,7 +176,7 @@
    #'((to-func ID) ARGS ...)])
 
 (provide
- #%top #%datum #%top-interaction
+ #%top #%datum #%top-interaction time-apply list
  (all-defined-out)
  (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

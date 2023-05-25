@@ -1,5 +1,5 @@
-#lang racket/base
-(require racket/trace math/array racket/provide)
+#lang racket
+(require racket/trace math/array racket/provide br/macro)
 (provide (matching-identifiers-out #rx"•" (all-defined-out)))
 (define (•promote x)
   (if (array? x) x (array x)))
@@ -8,9 +8,6 @@
   (if (array? x)
       (array-strict x)
       x))
-
-(define (•time x)
-  (time x))
 
 (define-syntax-rule (•trace f) (trace f))
 

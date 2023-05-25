@@ -104,7 +104,10 @@
    [(lx/: #\# (lx/* (lx/~ #\newline)))
     (token 'COMMENT (substring lexeme 1) #:skip? #t)]
      
-   [whitespace (token lexeme #:skip? #t)]
+   [(lx/+ whitespace) (token lexeme #:skip? #t)]
+
+   [(lx/: "•{" (lx/* whitespace) (lx/+ (lx/~ #\space #\})))
+    (token 'RKT (string->symbol (string-trim (substring lexeme 2))))]
 
    [#\{
     (begin
@@ -130,7 +133,7 @@
 
    [#\}
     (match (unbox specials)
-      [(list) (error "Found unmatched '}'")]
+      [(list) (token lexeme (string->symbol lexeme))]
       [(list* current-block outer-blocks)
        (begin
          (set-box! specials outer-blocks)
@@ -143,9 +146,6 @@
            [(9)  (token '2M-IMMEDIATE '𝕤)]
            [(18) (token '2M-DELAYED   '𝕊)]
            ))])]
-
-   [(lx/or "•Trace")
-    (token lexeme (parse-id lexeme))]
 
    [(lx/: (lx/? #\•) func)
     (let ([defined-by (if (string-prefix? lexeme "•") 'FUNC-LITERAL 'FUNC-CUSTOM)])
@@ -163,7 +163,7 @@
     (let ([defined-by (if (string-prefix? lexeme "•") 'SUB-LITERAL 'SUB-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
 
-   [(char-set "←⇐↩.;?⟨⟩[]()‿")
+   [(char-set "←⇐↩•.;?⟨⟩[]()‿")
     (token lexeme (string->symbol lexeme))]
    
    [(lx/: (lx/? #\¯) (lx/or #\∞ #\π))
