@@ -53,8 +53,10 @@
 (define-macro a-list  #'strand)
 
 (define-macro subBlock #'body)
-(define-macro (body STMTS ...)
-  #'((thunk STMTS ...)))
+(define-macro-cases body
+  [(body EXPR) #'EXPR]
+  [(body STMTS ...)
+   #'((thunk STMTS ...))])
 
 (define-macro (a-merge ELTS ...)
   #'(BQN> (strand ELTS ...)))
@@ -71,24 +73,29 @@
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
 
+(define/match ((make-block monad dyad) #:undo? [undo? #f] . args)
+  [( _  _ #t  _)         (error "Block functions are not invertable")]
+  [(#f  _  _ (list _  )) (error "Block is dyadic only")]
+  [( _ #f  _ (list _ _)) (error "Block is monadic only")]
+  [( _  _ #f (list x  )) (monad x)]
+  [( _  _ #f (list x w)) (dyad  x w)])
+
 (define-macro (FuncBlock BODY)
   (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
     #'(letrec
-          ([S (lambda (#:undo? [undo? #f] . args)
-                (match* (undo? args)
-                  [(#t _) (error "Block functions are not invertable")]
-                  [(#f (list X))
-                   (syntax-parameterize
-                       ([𝕤 (make-rename-transformer #'S)]
-                        [𝕩 (make-rename-transformer #'X)]
-                        [𝕨 (make-rename-transformer #'void)])
-                     BODY)]
-                  [(#f (list X W))
-                   (syntax-parameterize
-                       ([𝕤 (make-rename-transformer #'S)]
-                        [𝕩 (make-rename-transformer #'X)]
-                        [𝕨 (make-rename-transformer #'W)])
-                     BODY)]))])
+          ([S (make-block
+               (lambda (X)
+                 (syntax-parameterize
+                     ([𝕤 (make-rename-transformer #'S)]
+                      [𝕩 (make-rename-transformer #'X)]
+                      [𝕨 (make-rename-transformer #'void)])
+                   BODY))
+               (lambda (X W)
+                 (syntax-parameterize
+                     ([𝕤 (make-rename-transformer #'S)]
+                      [𝕩 (make-rename-transformer #'X)]
+                      [𝕨 (make-rename-transformer #'W)])
+                   BODY)))])
         S)))
 
 (define-macro-cases 1M-block

@@ -12,7 +12,7 @@
 (define-syntax-rule (•trace f) (trace f))
 
 (define (•show x)
-  (display x))
+  (displayln x))
 
 (define (•exit x)
   (exit x))
