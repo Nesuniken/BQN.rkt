@@ -124,6 +124,9 @@
 (define-macro (subExpr ARGS ...)
   #'(expr ARGS ...))
 
+(define-macro (stmt S)
+  #'S)
+
 (define-macro-cases expr
   [(expr (subExpr NAME ↩ VALUE))
    #'(begin
@@ -153,6 +156,9 @@
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
+     (module configure-runtime racket/base
+       (require BQN/setup)
+       (setup!))
      (array-strictness #f)
      EXPR ...))
 
