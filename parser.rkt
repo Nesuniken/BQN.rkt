@@ -56,9 +56,9 @@ subExpr     : @subject | arg | SUB-CUSTOM "↩" subExpr | SUB-CUSTOM Derv "↩" 
           
 sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
 
-body : /"{" (stmt /"⋄")* stmt /["⋄"]
+/body : /"{" (stmt /"⋄")* stmt /["⋄"]
 
-FuncBlock : body /FUNC-BLOCK
+FuncBlock : @body /FUNC-BLOCK
 1M-block  : body  (1M-IMMEDIATE | 1M-DELAYED)
 2M-block  : body  (2M-IMMEDIATE | 2M-DELAYED)
 subBlock  : @body /SUB-BLOCK

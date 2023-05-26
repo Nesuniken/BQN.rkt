@@ -11,4 +11,5 @@
       (repl-parse (bqn-tokenizer (open-input-string line)))))
 
 (define (setup!)
-  (current-read-interaction read-bqn-line))
+;  (current-read-interaction read-bqn-line)
+  (void))

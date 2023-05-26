@@ -58,11 +58,15 @@
   [(_ (? procedure?) _ _)
    (apply (BQN⍟ F (apply g args)) args)]
   [(_ 0 _ _) (first args)]
-  [(_  1 #f _) (apply F args)]
+;  [(_  1 #f _) (apply F args)]
   [(_ (? integer?) #t _)
    (apply (BQN⍟ F (- g)) args)]
   [(_ (? exact-positive-integer?) #f _)
-   (for/fold ([out (first args)]) ([r (in-range g)])
-     (apply F out (rest args)))]
+   (letrec
+       ([loop (lambda (n r)
+                (if (> n 1)
+                    (loop (- n 1) (apply F r (rest args)))
+                    (apply F r (rest args))))])
+     (loop g (first args)))]
   [(_ (? negative?) #f _)
    (apply (BQN⍟ (undo F) (- g)) args)])

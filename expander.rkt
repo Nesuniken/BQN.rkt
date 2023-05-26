@@ -84,14 +84,13 @@
       (monad x)))
 
 (define (make-func-block monad dyad)
-  (lambda (#:undo? [undo? #f] . args)
-    (if undo?
-        (error "Block functions are not invertable")
-        (case-lambda
-          [(x  ) (monad x)]
-          [(x w) (dyad  x w)]))))
+  (lambda (x [w (void)] #:undo? [undo? #f])
+    (cond
+      [undo?     (error "Block functions are not invertable")]
+      [(void? w) (monad x)]
+      [(dyad x w)])))
 
-(define-macro (FuncBlock BODY)
+(define-macro (FuncBlock STMTS ...)
   (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
     #'(letrec
           ([S (make-func-block
@@ -100,30 +99,30 @@
                      ([𝕤 (make-rename-transformer #'S)]
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'void)])
-                   BODY))
+                   STMTS ...))
                (lambda (X W)
                  (syntax-parameterize
                      ([𝕤 (make-rename-transformer #'S)]
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'W)])
-                   BODY)))])
+                   STMTS ...)))])
         S)))
 
 (define-macro-cases 1M-block
-  [(1M-block BODY 𝕤)
+  [(1M-block (STMTS ...) 𝕤)
    (with-syntax ([(R F) (generate-temporaries '(𝕣 𝕗))])
      #'(letrec
            ([R (lambda (F)
                  (syntax-parameterize
                      ([𝕣 (make-rename-transformer #'R)]
                       [𝕗 (make-rename-transformer #'F)])
-                   BODY))])
+                   STMTS ...))])
          R))]
-  [(1M-block BODY 𝕊)
-   #'(1M-block (FuncBlock BODY) 𝕤)])
+  [(1M-block (STMTS ...) 𝕊)
+   #'(1M-block (FuncBlock STMTS ...) 𝕤)])
 
 (define-macro-cases 2M-block
-  [(2M-block BODY 𝕤)
+  [(2M-block (STMTS ...) 𝕤)
    (with-syntax ([(R F G) (generate-temporaries '(𝕣 𝕗 𝕘))])
      #'(letrec
            ([R (lambda (F G)
@@ -131,10 +130,10 @@
                      ([𝕣 (make-rename-transformer #'R)]
                       [𝕗 (make-rename-transformer #'F)]
                       [𝕘 (make-rename-transformer #'G)])
-                   BODY))])
+                   (STMTS ...)))])
          R))]
-  [(2M-block BODY 𝕊)
-   #'(2M-block (FuncBlock BODY) 𝕤)])
+  [(2M-block (STMTS ...) 𝕊)
+   #'(2M-block (FuncBlock STMTS ...) 𝕤)])
 
 (define-macro (2M-Expr ARGS ...)
   #'(expr ARGS ...))
