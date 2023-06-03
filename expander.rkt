@@ -193,7 +193,7 @@
    #'((to-func ID) ARGS ...)])
 
 (provide
- #%top #%datum #%top-interaction module
+ #%top #%datum #%top-interaction time-apply list
  (all-defined-out)
  (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))
