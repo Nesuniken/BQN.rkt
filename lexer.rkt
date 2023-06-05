@@ -6,24 +6,10 @@
   racket/format
   racket/list
   brag/support
+  BQN/lex-utils
   (prefix-in lx/ br-parser-tools/lex-sre))
 
 (provide bqn-tokenizer)
-
-(define-lex-abbrev int (lx/* (lx/or #\_ (lx// #\0 #\9))))
-(define-lex-abbrev decimal (lx/: (lx/? #\¯) (lx// #\0 #\9) int (lx/? #\. int)))
-(define-lex-abbrev real (lx/: decimal (lx/? (lx/or #\E #\e) (lx/? #\¯) int)))
-
-(define-lex-abbrev non-special (lx/- alphabetic (char-set "𝕎𝕨𝕊𝕤𝕏𝕩𝔽𝕗𝔾𝕘")))
-
-(define-lex-abbrev sub
-  (lx/: (lx/or #\_ alphabetic) (lx/* (lx/or #\_ non-special numeric))))
-(define-lex-abbrev func
-  (lx/: (lx// #\A #\Z) (lx/* (lx/or #\_ non-special numeric))))
-(define-lex-abbrev 1mod
-  (lx/: #\_ (lx/* (lx/or #\_ non-special numeric))))
-(define-lex-abbrev 2mod
-  (lx/: 1mod #\_))
 
 (define (parse-num str)
   (string->number (string-replace (string-replace str "_" "") "¯" "-")))
@@ -40,10 +26,10 @@
   (thunk ((bqn-lexer specials) port)))
 
 (define (lex string)
-  (define specials (box '()))
-  (apply-port-proc (bqn-lexer specials) string))
+  (define stack (box '()))
+  (apply-port-proc (bqn-lexer stack) string))
 
-(define (bqn-lexer specials)
+(define (bqn-lexer stack)
   (define (add-special! lexeme)
     (define special-downcase
       (case lexeme
@@ -59,27 +45,27 @@
         [(𝕗)   3]
         [(𝕘)   9]))
 
-    (match (unbox specials)
+    (match (unbox stack)
       [(list) (error (~a "Special name " lexeme " found outside block"))]
       [(list* current-block outer-blocks)
-       (set-box! specials
+       (set-box! stack
          (cons
           (lcm current-block role)
           outer-blocks))])
     (token (if (string-contains? "𝕎𝕊𝕏𝔽𝔾" lexeme) 'FUNC-LITERAL 'SUB-LITERAL) special-downcase))
   
   (lexer-srcloc
-   [(char-set "⍳+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!")
+   [func-prim
     (token 'FUNC-LITERAL (string->symbol (~a "BQN" lexeme)))]
 
    [#\| (token 'FUNC-LITERAL (string->symbol "BQN-PIPE"))]
 
    [#\` (token '1MOD-LITERAL (string->symbol "BQN-GRAVE"))]
      
-   [(char-set "˙˘¨⌜´˝⁼˜")
+   [1mod-prim
     (token '1MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
      
-   [(char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊")
+   [2mod-prim
     (token '2MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
 
    [#\@ (token 'CHARACTER #\null)]
@@ -91,7 +77,7 @@
    [(lx/: #\' any-char #\')
     (token 'CHARACTER (second (string->list lexeme)))]
  
-   [(lx/: #\" (lx/* (lx/or (lx/~ #\") (lx/: #\" #\"))) #\")
+   [string
     (let* ([quote-count -2]
            [quote-removal
             (λ(c)(or
@@ -111,32 +97,32 @@
 
    [#\{
     (begin
-      (set-box! specials
-        (cons 1 (unbox specials)))
+      (set-box! stack
+        (cons 1 (unbox stack)))
       lexeme)]   
 
    [(lx/: (lx/? #\_) #\𝕣 (lx/? #\_))
     (begin
-      (match (cons lexeme (unbox specials))
+      (match (cons lexeme (unbox stack))
         [(list _) (error "Special name 𝕣 found outside block")]
         [(list* _ (or "𝕘" "𝔾") _) empty]
         [(list* "_𝕣_" current-block outer-blocks)
-         (set-box! specials
+         (set-box! stack
            (cons (lcm current-block 9) rest))]
         [(list* _ current-block outer-blocks)
-         (set-box! specials
+         (set-box! stack
            (cons (lcm current-block 3) rest))])
       (token lexeme '𝕣))]
 
-   [(char-set "𝕎𝕨𝕊𝕤𝕏𝕩𝔽𝕗𝔾𝕘")
+   [special
     (add-special! lexeme)]
 
    [#\}
-    (match (unbox specials)
+    (match (unbox stack)
       [(list) (token lexeme (string->symbol lexeme))]
       [(list* current-block outer-blocks)
        (begin
-         (set-box! specials outer-blocks)
+         (set-box! stack outer-blocks)
 
          (case current-block
            [(1)  (token 'SUB-BLOCK)]
@@ -147,23 +133,23 @@
            [(18) (token '2M-DELAYED   '𝕊)]
            ))])]
 
-   [(lx/: (lx/? #\•) func)
+   [(lx/: (lx/? #\•) func-name)
     (let ([defined-by (if (string-prefix? lexeme "•") 'FUNC-LITERAL 'FUNC-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
 
-   [(lx/: (lx/? #\•) 1mod)
+   [(lx/: (lx/? #\•) 1mod-name)
     (let ([defined-by (if (string-prefix? lexeme "•") '1MOD-LITERAL '1MOD-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
 
-   [(lx/: (lx/? #\•) 2mod)
+   [(lx/: (lx/? #\•) 2mod-name)
     (let ([defined-by (if (string-prefix? lexeme "•") '2MOD-LITERAL '2MOD-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
 
-   [(lx/: (lx/? #\•) sub)
+   [(lx/: (lx/? #\•) sub-name)
     (let ([defined-by (if (string-prefix? lexeme "•") 'SUB-LITERAL 'SUB-CUSTOM)])
       (token defined-by (parse-id lexeme)))]
 
-   [(char-set "←⇐↩•.;?⟨⟩[]()‿")
+   [(lx/or brackets assign #\. #\‿)
     (token lexeme (string->symbol lexeme))]
    
    [(lx/: (lx/? #\¯) (lx/or #\∞ #\π))

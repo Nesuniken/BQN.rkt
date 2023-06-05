@@ -1,6 +1,6 @@
 #lang racket/base
-(require math/array racket/undefined racket/provide racket/list racket/match racket/function BQN/prim-utils
-         (only-in BQN/primitives BQN⊑ BQN⊢)
+(require math/array racket/undefined racket/provide racket/list racket/match BQN/prim-utils
+         (only-in BQN/primitives BQN⊑)
          (only-in BQN/1-modifiers BQN˜))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
