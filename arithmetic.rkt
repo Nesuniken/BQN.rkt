@@ -169,7 +169,7 @@
 (define BQN⋆
   (pv-func (vector 1 (cons exp log) (cons (swap expt) log))))
 
-(define BQN-PIPE
+(define BQN\|
   (pv-func (vector #f magnitude (swap modulo))))
 
 (define BQN∧

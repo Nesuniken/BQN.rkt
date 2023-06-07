@@ -15,8 +15,6 @@ expr    : subExpr
         | 1M-Expr
         | 2M-Expr
 
-rkt : RKT stmt* /"}"
-
 @assign: "←" | "⇐"
 
 def : 2MOD-CUSTOM assign (2M-block | 2M-Expr)

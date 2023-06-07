@@ -46,7 +46,7 @@
         [(𝕘)   9]))
 
     (match (unbox stack)
-      [(list) (error (~a "Special name " lexeme " found outside block"))]
+      [(list) (error (string-append "Special name" lexeme "found outside block"))]
       [(list* current-block outer-blocks)
        (set-box! stack
          (cons
@@ -57,10 +57,6 @@
   (lexer-srcloc
    [func-prim
     (token 'FUNC-LITERAL (string->symbol (~a "BQN" lexeme)))]
-
-   [#\| (token 'FUNC-LITERAL (string->symbol "BQN-PIPE"))]
-
-   [#\` (token '1MOD-LITERAL (string->symbol "BQN-GRAVE"))]
      
    [1mod-prim
     (token '1MOD-LITERAL (string->symbol (~a "BQN" lexeme)))]
@@ -78,22 +74,12 @@
     (token 'CHARACTER (second (string->list lexeme)))]
  
    [string
-    (let* ([quote-count -2]
-           [quote-removal
-            (λ(c)(or
-                  (not (equal? c #\"))
-                  (begin
-                    (set! quote-count (+ quote-count 1))
-                    (equal? (remainder quote-count 2) 1))))])
-      (token 'STRING (filter quote-removal (string->list lexeme))))]
+      (token 'STRING (quote-removal (string->list lexeme)))]
      
    [(lx/: #\# (lx/* (lx/~ #\newline)))
     (token 'COMMENT (substring lexeme 1) #:skip? #t)]
      
    [(lx/+ whitespace) (token lexeme #:skip? #t)]
-
-   [(lx/: "•{" (lx/* whitespace) (lx/+ (lx/~ #\space #\})))
-    (token 'RKT (string->symbol (string-trim (substring lexeme 2))))]
 
    [#\{
     (begin
@@ -114,8 +100,7 @@
            (cons (lcm current-block 3) rest))])
       (token lexeme '𝕣))]
 
-   [special
-    (add-special! lexeme)]
+   [special (add-special! lexeme)]
 
    [#\}
     (match (unbox stack)

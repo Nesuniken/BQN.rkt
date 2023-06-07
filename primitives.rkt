@@ -43,7 +43,9 @@
           [(BQN⌽)
            (let* ([v-d-ceil (ceiling var-dim-val)]
                   [resize (* v-d-ceil dim-prod)]
-                  [x-loop (λ (i) (array-ref flat-x (vector (modulo (vector-ref i 0) (array-size flat-x)))))])
+                  [x-loop (λ (i) (array-ref
+                                  flat-x
+                                  (vector (modulo (vector-ref i 0) (array-size flat-x)))))])
              (array-reshape (build-array (vector resize) x-loop) (make-dims v-d-ceil)))])))
   )
 

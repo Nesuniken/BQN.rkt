@@ -1,7 +1,17 @@
 #lang racket/base
-(require brag/support
+(require brag/support racket/list
          (prefix-in lx/ br-parser-tools/lex-sre))
 (provide (all-defined-out))
+
+(define (quote-removal list-str [counter -1])
+  (cond
+    [(empty? list-str) '()]
+    [(equal? (remainder counter 2) 1)
+     (quote-removal (rest list-str) (add1 counter))]
+    [else (cons (first list-str)
+                (quote-removal (rest list-str) (add1 counter)))]
+    )
+  )
 
 (define-lex-abbrevs
   (nothing-dot #\·)
@@ -27,6 +37,6 @@
   (2mod-name (lx/: 1mod-name #\_))
   (2mod-prim (char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"))
 
-  (brackets (char-set "⟨⟩[]()"))
+  (brackets (char-set "⟨⟩[](){}"))
   (assign (char-set "←⇐↩"))
   )

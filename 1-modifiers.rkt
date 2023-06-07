@@ -45,7 +45,7 @@
     (for/fold ([fold w]) ([cell (in-array-axis x)])
       (F fold cell))))
 
-(define (BQN-GRAVE F)
+(define (BQN\` F)
   (lambda (x [w #f])
     (list->array
      (for/lists (scan) ([cell (in-array-axis x)])

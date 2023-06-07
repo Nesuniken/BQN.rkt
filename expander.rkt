@@ -18,9 +18,6 @@
 (define-syntax-parameter 𝕩
   (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 
-(define-macro (rkt NAME STMTS ...)
-  #'(NAME STMTS ...))
-
 (define-macro-cases Derv
   [(Derv F) #'F]
   [(Derv F 1M  ) #'(1M F  )]
