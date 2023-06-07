@@ -70,9 +70,9 @@
 
    [#\@ (token 'CHARACTER #\null)]
 
-   [#\· (token 'NOTHING)]
+   [nothing-dot (token 'NOTHING)]
      
-   [(lx/+ (lx/or #\newline #\, #\⋄)) #\⋄]
+   [newlines #\⋄]
      
    [(lx/: #\' any-char #\')
     (token 'CHARACTER (second (string->list lexeme)))]
