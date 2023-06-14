@@ -14,8 +14,12 @@
 (define (parse-num str)
   (string->number (string-replace (string-replace str "_" "") "¯" "-")))
 
-(define (parse-id str)
-  (string->symbol (string-downcase (string-replace str "_" ""))))
+(define (id-token str literal custom)
+  (define id (string->symbol (string-downcase (string-replace str "_" ""))))
+  (if (string-prefix? str "•")
+      (token literal id)
+      (token custom  id))
+  )
 
 (define (bqn-tokenizer port [path #f])
   (port-count-lines! port)
@@ -75,6 +79,9 @@
  
    [string
       (token 'STRING (quote-removal (string->list lexeme)))]
+
+   [(lx/: #\• string)
+    (token 'RKT-STRING (substring lexeme 2 (sub1 (string-length lexeme))))]
      
    [(lx/: #\# (lx/* (lx/~ #\newline)))
     (token 'COMMENT (substring lexeme 1) #:skip? #t)]
@@ -100,7 +107,7 @@
            (cons (lcm current-block 3) rest))])
       (token lexeme '𝕣))]
 
-   [special (add-special! lexeme)]
+   [(lx/or special-sub special-func) (add-special! lexeme)]
 
    [#\}
     (match (unbox stack)
@@ -118,21 +125,28 @@
            [(18) (token '2M-DELAYED   '𝕊)]
            ))])]
 
-   [(lx/: (lx/? #\•) func-name)
-    (let ([defined-by (if (string-prefix? lexeme "•") 'FUNC-LITERAL 'FUNC-CUSTOM)])
-      (token defined-by (parse-id lexeme)))]
+   [(lx/or "•Require")
+    (token (string->symbol lexeme))]
 
-   [(lx/: (lx/? #\•) 1mod-name)
-    (let ([defined-by (if (string-prefix? lexeme "•") '1MOD-LITERAL '1MOD-CUSTOM)])
-      (token defined-by (parse-id lexeme)))]
+   [2mod-name (id-token lexeme '2MOD-LITERAL '2MOD-CUSTOM)]
 
-   [(lx/: (lx/? #\•) 2mod-name)
-    (let ([defined-by (if (string-prefix? lexeme "•") '2MOD-LITERAL '2MOD-CUSTOM)])
-      (token defined-by (parse-id lexeme)))]
+   [(lx/: "•_" (char-set "Rr") kt "_." rkt-id)
+    (token '2MOD-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
-   [(lx/: (lx/? #\•) sub-name)
-    (let ([defined-by (if (string-prefix? lexeme "•") 'SUB-LITERAL 'SUB-CUSTOM)])
-      (token defined-by (parse-id lexeme)))]
+   [1mod-name (id-token lexeme '1MOD-LITERAL '1MOD-CUSTOM)]
+
+   [(lx/: "•_" (char-set "Rr") kt #\. rkt-id)
+    (token '1MOD-CUSTOM (string->symbol (trim-rkt lexeme)))]
+      
+   [func-name (id-token lexeme 'FUNC-LITERAL 'FUNC-CUSTOM)]
+
+   [(lx/: "•R" kt #\. rkt-id)
+    (token 'FUNC-CUSTOM (string->symbol (trim-rkt lexeme)))]
+
+   [sub-name  (id-token lexeme 'SUB-LITERAL 'SUB-CUSTOM)]
+
+   [(lx/: #\• (lx/? #\r kt) #\. rkt-id)
+    (token 'SUB-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
    [(lx/or brackets assign #\. #\‿)
     (token lexeme (string->symbol lexeme))]
@@ -142,7 +156,7 @@
 
    [real (token 'NUMBER (parse-num lexeme))]
    
-   [(lx/: real (lx/or #\I #\i) real)
+   [(lx/: real (char-set "Ii") real)
     (token 'NUMBER
            (apply make-rectangular
             (map parse-num

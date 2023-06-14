@@ -141,8 +141,7 @@
 (define-macro (subExpr ARGS ...)
   #'(expr ARGS ...))
 
-(define-macro (stmt S)
-  #'S)
+(define-macro (stmt S) #'S)
 
 (define-macro-cases expr
   [(expr (subExpr NAME ↩ VALUE))
@@ -151,9 +150,9 @@
        NAME)]
   [(expr (_ NAME ↩ VALUE))
    #'(expr NAME ↩ VALUE)]
-  [(expr (subExpr NAME FUNC ↩))
+  [(expr (_ NAME FUNC ↩))
    #'(subExpr NAME ↩ (FUNC NAME))]
-  [(expr (subExpr NAME FUNC ↩ ARG))
+  [(expr (_ NAME FUNC ↩ ARG))
    #'(subExpr NAME ↩ (FUNC NAME ARG))]
   [(expr NAME ↩ VALUE)
    #'(begin (set! NAME VALUE) NAME)]
@@ -163,13 +162,38 @@
    #'VALUE]
   )
 
+(define-macro-cases select-ids
+  [(select-ids PATH (lhsStrand ATOMS ...))
+   #'(select-ids PATH () (ATOMS ...))]
+  [(select-ids PATH (lhsList ELTS ...))
+   #'(select-ids PATH () (ELTS ...))]
+  
+  [(  select-ids PATH (IDS ...) ((lhs-atom ANY) REST ...))
+   #'(select-ids PATH (IDS ...) (ANY REST ...))]
+  [(  select-ids PATH (IDS ...) ((lhs-entry ANY) REST ...))
+   #'(select-ids PATH (IDS ...) (ANY REST ...))]
+
+  [(select-ids PATH (IDS ...) ((name NAME) REST ...))
+   #'(select-ids PATH (NAME IDS ...) (REST ...))]
+  [(select-ids PATH (IDS ...) ((lhs-entry BIND-ID ORIG-ID) REST ...))
+   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) (REST ...))]
+
+  [(select-ids PATH (IDS ...) ())
+   #'(require (only-in PATH IDS ...))]
+  )
+
 (define-macro-cases def
   [(def NAME ⇐ VALUE)
    #'(begin
        (provide NAME)
        (def NAME ← VALUE))]
+  [(def SELECTION ← (bqn-req PATH))
+   #'(select-ids PATH SELECTION)]
   [(def NAME ← VALUE)
    #'(define NAME (•strict VALUE))])
+
+(define-macro (bqn-req PATH)
+  #'(require PATH))
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
@@ -190,7 +214,7 @@
    #'((to-func ID) ARGS ...)])
 
 (provide
- #%top #%datum #%top-interaction time-apply list
+ #%top #%datum #%top-interaction
  (all-defined-out)
  (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

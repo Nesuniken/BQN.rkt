@@ -9,7 +9,7 @@
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
 program : [stmt] (/"⋄" [stmt])*
-@stmt   : rkt | def | expr
+@stmt   : def | expr | bqn-req
 expr    : subExpr
         | FuncExpr
         | 1M-Expr
@@ -20,14 +20,17 @@ expr    : subExpr
 def : 2MOD-CUSTOM assign (2M-block | 2M-Expr)
     | 1MOD-CUSTOM assign (1M-block | 1M-Expr)
     | FUNC-CUSTOM assign (FuncBlock | FuncExpr)
-    | SUB-CUSTOM  assign subExpr
+    |  SUB-CUSTOM assign subExpr
+    |    @lhsComp assign bqn-req 
+
+bqn-req : /"•Require" (RKT-STRING | SUB-CUSTOM)
 
 2Mod : [atom /"."] 2MOD-CUSTOM | 2MOD-LITERAL | 2M-block
      | /"(" (@2Mod    | 2M-Expr)  /")"  
 1Mod : [atom /"."] 1MOD-CUSTOM | 1MOD-LITERAL | 1M-block
      | /"(" (@1Mod    | 1M-Expr)  /")"  
 Func : [atom /"."] FUNC-CUSTOM | FUNC-LITERAL | FuncBlock
-     | /"(" (Func    | FuncExpr) /")"  
+     | /"(" (Func     | FuncExpr) /")"  
 atom : [atom /"."] SUB-CUSTOM  | sub-literal  | subBlock
      | /"(" (@subject | subExpr)  /")" | a-list | a-merge 
 
@@ -51,8 +54,19 @@ arg         : [subject | nothing] Derv subExpr
 nothing     : [subject | nothing] Derv nothing | NOTHING
 subExpr     : @subject | arg | SUB-CUSTOM "↩" subExpr | SUB-CUSTOM Derv "↩" [subExpr]
 
-          
-sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING
+name      : 2MOD-CUSTOM | 1MOD-CUSTOM | FUNC-CUSTOM | SUB-CUSTOM
+@lhs-sub  : NOTHING | lhsList | lhsArray
+@lhs-any   : name | lhs-sub | /"(" lhs-elt /")"
+lhs-atom  : lhs-any | /"(" lhsStrand /")"
+lhs-elt   : lhs-any | lhsStrand
+lhs-entry : @lhs-elt | lhs /"⇐" name
+lhsStrand : lhs-atom (/"‿" lhs-atom)+
+lhsList   : /"⟨" /["⋄"] [(lhs-entry /"⋄")* lhs-entry /["⋄"]] /"⟩"
+lhsArray  : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
+lhsComp   : lhs-sub | lhsStrand
+@lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
+
+sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING | RKT-STRING
 
 /body : /"{" (stmt /"⋄")* stmt /["⋄"]
 
