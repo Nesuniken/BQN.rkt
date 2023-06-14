@@ -130,22 +130,22 @@
 
    [2mod-name (id-token lexeme '2MOD-LITERAL '2MOD-CUSTOM)]
 
-   [(lx/: "•_" (char-set "Rr") kt "_." rkt-id)
+   [rkt-2mod
     (token '2MOD-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
    [1mod-name (id-token lexeme '1MOD-LITERAL '1MOD-CUSTOM)]
 
-   [(lx/: "•_" (char-set "Rr") kt #\. rkt-id)
+   [rkt-1mod
     (token '1MOD-CUSTOM (string->symbol (trim-rkt lexeme)))]
       
    [func-name (id-token lexeme 'FUNC-LITERAL 'FUNC-CUSTOM)]
 
-   [(lx/: "•R" kt #\. rkt-id)
+   [rkt-func
     (token 'FUNC-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
    [sub-name  (id-token lexeme 'SUB-LITERAL 'SUB-CUSTOM)]
 
-   [(lx/: #\• (lx/? #\r kt) #\. rkt-id)
+   [rkt-sub
     (token 'SUB-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
    [(lx/or brackets assign #\. #\‿)
