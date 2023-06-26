@@ -66,11 +66,16 @@ lhsArray  : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
 lhsComp   : lhs-sub | lhsStrand
 @lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
 
-sub-literal : SUB-LITERAL | NUMBER | CHARACTER | STRING | RKT-STRING
-
 /body : /"{" (stmt /"⋄")* stmt /["⋄"]
 
 FuncBlock : @body /FUNC-BLOCK
 1M-block  : body  (1M-IMMEDIATE | 1M-DELAYED)
 2M-block  : body  (2M-IMMEDIATE | 2M-DELAYED)
 subBlock  : @body /SUB-BLOCK
+
+@sub-literal : SUB-LITERAL
+             | CHARACTER | STRING | RKT-STRING
+             | INTEGER | REAL | NUMBER | real | number
+
+number : real /"i" real
+real   : REAL | ["¯"] ("∞" | "π" [/"e" INTEGER])

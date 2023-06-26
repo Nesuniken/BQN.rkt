@@ -1,22 +1,9 @@
 #lang racket
-(require racket/match math/array br/macro racket/stxparam
+(require math/array br/macro 
          BQN/primitives BQN/arithmetic
          BQN/1-modifiers BQN/2-modifiers
-         BQN/system-values BQN/prim-utils)
-
-
-(define-syntax-parameter 𝕣
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕘
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕗
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕤
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕨
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕩
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
+         BQN/system-values BQN/prim-utils
+         BQN/blocks BQN/assign)
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -61,76 +48,26 @@
 (define-macro (strand ELTS ...)
   #'(array #[ELTS ...]))
 
-(define-macro-cases sub-literal
-  [(sub-literal (CHARS ...))
-   #'(array #[CHARS ...])]
-  [(sub-literal VAL)
-   #'VAL])
+(define-macro (number R1 R2)
+   #'(make-rectangular R1 R2)
+  )
+
+(define (pi-exp int)
+  (* pi (expt 10 int))
+  )
+
+(define-macro-cases real
+  [(real ¯ ∞) #'-inf.0]
+  [(real   ∞) #'+inf.0]
+  [(real ¯ π REST ...)
+   #'(- (real π REST ...))]
+  [(real π) #'pi]
+  [(real π INT)
+   #'(pi-exp INT)]
+  )
 
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
-
-(define ((make-dyad-block dyad) x w #:undo? [undo? #f])
-  (if undo?
-      (error "Block functions are not invertable")
-      (dyad x w)))
-
-(define ((make-monad-block monad) x #:undo? [undo? #f])
-  (if undo?
-      (error "Block functions are not invertable")
-      (monad x)))
-
-(define (make-func-block monad dyad)
-  (lambda (x [w (void)] #:undo? [undo? #f])
-    (cond
-      [undo?     (error "Block functions are not invertable")]
-      [(void? w) (monad x)]
-      [(dyad x w)])))
-
-(define-macro (FuncBlock STMTS ...)
-  (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
-    #'(letrec
-          ([S (make-func-block
-               (lambda (X)
-                 (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)]
-                      [𝕨 (make-rename-transformer #'void)])
-                   STMTS ...))
-               (lambda (X W)
-                 (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)]
-                      [𝕨 (make-rename-transformer #'W)])
-                   STMTS ...)))])
-        S)))
-
-(define-macro-cases 1M-block
-  [(1M-block (STMTS ...) 𝕤)
-   (with-syntax ([(R F) (generate-temporaries '(𝕣 𝕗))])
-     #'(letrec
-           ([R (lambda (F)
-                 (syntax-parameterize
-                     ([𝕣 (make-rename-transformer #'R)]
-                      [𝕗 (make-rename-transformer #'F)])
-                   STMTS ...))])
-         R))]
-  [(1M-block (STMTS ...) 𝕊)
-   #'(1M-block (FuncBlock STMTS ...) 𝕤)])
-
-(define-macro-cases 2M-block
-  [(2M-block (STMTS ...) 𝕤)
-   (with-syntax ([(R F G) (generate-temporaries '(𝕣 𝕗 𝕘))])
-     #'(letrec
-           ([R (lambda (F G)
-                 (syntax-parameterize
-                     ([𝕣 (make-rename-transformer #'R)]
-                      [𝕗 (make-rename-transformer #'F)]
-                      [𝕘 (make-rename-transformer #'G)])
-                   (STMTS ...)))])
-         R))]
-  [(2M-block (STMTS ...) 𝕊)
-   #'(2M-block (FuncBlock STMTS ...) 𝕤)])
 
 (define-macro (2M-Expr ARGS ...)
   #'(expr ARGS ...))
@@ -142,58 +79,6 @@
   #'(expr ARGS ...))
 
 (define-macro (stmt S) #'S)
-
-(define-macro-cases expr
-  [(expr (subExpr NAME ↩ VALUE))
-   #'(begin
-       (set! NAME (•strict VALUE))
-       NAME)]
-  [(expr (_ NAME ↩ VALUE))
-   #'(expr NAME ↩ VALUE)]
-  [(expr (_ NAME FUNC ↩))
-   #'(subExpr NAME ↩ (FUNC NAME))]
-  [(expr (_ NAME FUNC ↩ ARG))
-   #'(subExpr NAME ↩ (FUNC NAME ARG))]
-  [(expr NAME ↩ VALUE)
-   #'(begin (set! NAME VALUE) NAME)]
-  [(expr (_ VALUE))
-   #'VALUE]
-  [(expr VALUE)
-   #'VALUE]
-  )
-
-(define-macro-cases select-ids
-  [(select-ids PATH (lhsStrand ATOMS ...))
-   #'(select-ids PATH () (ATOMS ...))]
-  [(select-ids PATH (lhsList ELTS ...))
-   #'(select-ids PATH () (ELTS ...))]
-  
-  [(  select-ids PATH (IDS ...) ((lhs-atom ANY) REST ...))
-   #'(select-ids PATH (IDS ...) (ANY REST ...))]
-  [(  select-ids PATH (IDS ...) ((lhs-entry ANY) REST ...))
-   #'(select-ids PATH (IDS ...) (ANY REST ...))]
-
-  [(select-ids PATH (IDS ...) ((name NAME) REST ...))
-   #'(select-ids PATH (NAME IDS ...) (REST ...))]
-  [(select-ids PATH (IDS ...) ((lhs-entry BIND-ID ORIG-ID) REST ...))
-   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) (REST ...))]
-
-  [(select-ids PATH (IDS ...) ())
-   #'(require (only-in PATH IDS ...))]
-  )
-
-(define-macro-cases def
-  [(def NAME ⇐ VALUE)
-   #'(begin
-       (provide NAME)
-       (def NAME ← VALUE))]
-  [(def SELECTION ← (bqn-req PATH))
-   #'(select-ids PATH SELECTION)]
-  [(def NAME ← VALUE)
-   #'(define NAME (•strict VALUE))])
-
-(define-macro (bqn-req PATH)
-  #'(require PATH))
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
@@ -216,5 +101,7 @@
 (provide
  #%top #%datum #%top-interaction
  (all-defined-out)
- (all-from-out BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers BQN/system-values)
+ (all-from-out BQN/blocks BQN/assign
+               BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers
+               BQN/system-values)
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

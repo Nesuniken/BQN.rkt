@@ -2,11 +2,7 @@
 (require math/array racket/match racket/provide racket/math racket/list BQN/prim-utils)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define  ∞ +inf.0)
-(define ¯∞ -inf.0)
-
-(define  π    pi)
-(define ¯π (- pi))
+(define  π pi)
 
 (define (add x w)
   (cond
