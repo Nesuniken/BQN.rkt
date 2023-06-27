@@ -3,22 +3,16 @@
 (provide (all-defined-out))
 
 (define-macro-cases select-ids
-  [(select-ids PATH (lhsStrand ATOMS ...))
-   #'(select-ids PATH () (ATOMS ...))]
-  [(select-ids PATH (lhsList ELTS ...))
-   #'(select-ids PATH () (ELTS ...))]
+  [(select-ids PATH (IDS ...) (name NAME) REST ...)
+   #'(select-ids PATH (NAME IDS ...) REST ...)]
   
-  [(  select-ids PATH (IDS ...) ((lhs-atom ANY) REST ...))
-   #'(select-ids PATH (IDS ...) (ANY REST ...))]
-  [(  select-ids PATH (IDS ...) ((lhs-entry ANY) REST ...))
-   #'(select-ids PATH (IDS ...) (ANY REST ...))]
+  [(  select-ids PATH (IDS ...) (_ ANY) REST ...)
+   #'(select-ids PATH (IDS ...) ANY REST ...)]
 
-  [(select-ids PATH (IDS ...) ((name NAME) REST ...))
-   #'(select-ids PATH (NAME IDS ...) (REST ...))]
-  [(select-ids PATH (IDS ...) ((lhs-entry BIND-ID ORIG-ID) REST ...))
-   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) (REST ...))]
+  [(select-ids PATH (IDS ...) (lhs-entry BIND-ID ORIG-ID) REST ...)
+   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) REST ...)]
 
-  [(select-ids PATH (IDS ...) ())
+  [(select-ids PATH (IDS ...))
    #'(require (only-in PATH IDS ...))]
   )
 
@@ -27,8 +21,8 @@
    #'(begin
        (provide NAME)
        (def NAME ← VALUE))]
-  [(def SELECTION ← (bqn-req PATH))
-   #'(select-ids PATH SELECTION)]
+  [(def (_ IDS ...) ← (bqn-req PATH))
+   #'(select-ids PATH () IDS ...)]
   [(def NAME ← VALUE)
    #'(define NAME (•strict VALUE))])
 
