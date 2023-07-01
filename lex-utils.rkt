@@ -18,7 +18,7 @@
 
 (define-lex-abbrevs
   (nothing-dot #\·)
-  (newlines (lx/+ (lx/or #\newline #\, #\⋄)))
+  (newlines (lx/+ (lx/or #\newline #\return #\, #\⋄)))
 
   
   (-? (lx/? #\¯))
@@ -59,12 +59,12 @@
   (1mod-id   (lx/: #\_ (lx/+ trailing-char)))
   (1mod-name (lx/: •? 1mod-id))
   (1mod-prim (char-set "`˙˘¨⌜´˝⁼˜"))
-  (1mod (lx/or 1mod-prim 1mod-name rkt-1mod))
+  (1mod (lx/or "_𝕣" 1mod-prim 1mod-name rkt-1mod))
 
   (rkt-2mod (lx/: "•_" (char-set "Rr") kt "_." rkt-id))
   (2mod-name (lx/: •? 1mod-id #\_))
   (2mod-prim (char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"))
-  (2mod (lx/or 2mod-prim 2mod-name rkt-2mod))
+  (2mod (lx/or "_𝕣_" 2mod-prim 2mod-name rkt-2mod))
 
   (notation (char-set "π∞¯"))
   (brackets (char-set "⟨⟩[](){}"))

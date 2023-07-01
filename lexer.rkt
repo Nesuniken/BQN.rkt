@@ -72,7 +72,7 @@
       (token 'REAL (parse-num lexeme))]
 
      [(lx/or #\. #\e #\i notation)
-      (token lexeme (string->symbol lexeme))]
+      (token lexeme)]
 
      [(lx/or #\E #\I)
       (token (string-downcase lexeme))]

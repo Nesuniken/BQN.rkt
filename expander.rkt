@@ -69,14 +69,6 @@
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
 
-(define-macro (2M-Expr ARGS ...)
-  #'(expr ARGS ...))
-(define-macro (1M-Expr ARGS ...)
-  #'(expr ARGS ...))
-(define-macro (FuncExpr ARGS ...)
-  #'(expr ARGS ...))
-(define-macro (subExpr ARGS ...)
-  #'(expr ARGS ...))
 
 (define-macro (stmt S) #'S)
 

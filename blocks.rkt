@@ -15,16 +15,6 @@
 (define-syntax-parameter 𝕩
   (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
 
-(define ((make-dyad-block dyad) x w #:undo? [undo? #f])
-  (if undo?
-      (error "Block functions are not invertable")
-      (dyad x w)))
-
-(define ((make-monad-block monad) x #:undo? [undo? #f])
-  (if undo?
-      (error "Block functions are not invertable")
-      (monad x)))
-
 (define (make-func-block monad dyad)
   (lambda (x [w (void)] #:undo? [undo? #f])
     (cond
