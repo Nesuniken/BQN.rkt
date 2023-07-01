@@ -215,10 +215,6 @@
   [(body STMTS ...)
    #'((thunk STMTS ...))])
 
-(define-macro-cases test
-  [(test (BLOCK (body STMTS ...) REST ...))
-   #'(BLOCK (STMTS ...) REST ...)])
-
 (define (make-func-block monad dyad)
   (lambda (x [w (void)] #:undo? [undo? #f])
     (cond
