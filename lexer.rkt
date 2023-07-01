@@ -84,9 +84,6 @@
   
   (define main-lexer
     (lexer-srcloc
-     [(lx/or brackets assign #\‿)
-      (token lexeme (string->symbol lexeme))]
-
      [notation
       (begin
         (set-box! number? #t)
@@ -120,7 +117,7 @@
 
      [#\. (token ".")]
      
-     [newlines #\⋄]
+     [(lx/+ newline) #\⋄]
      
      [(lx/: #\' any-char #\')
       (token 'CHARACTER (second (string->list lexeme)))]
@@ -134,7 +131,7 @@
      [(lx/: #\# (lx/* (lx/~ #\newline)))
       (token 'COMMENT (substring lexeme 1) #:skip? #t)]
      
-     [(lx/+ whitespace) (token lexeme #:skip? #t)]
+     [(lx/+ white-space) (token lexeme #:skip? #t)]
 
      [#\{
       (begin
@@ -195,6 +192,9 @@
 
      [rkt-sub
       (token 'SUB-CUSTOM (string->symbol (trim-rkt lexeme)))]
+
+     [(lx/or brackets assign #\‿)
+      (token lexeme (string->symbol lexeme))]
      ))
   
   (if (unbox number?) num-lexer main-lexer)

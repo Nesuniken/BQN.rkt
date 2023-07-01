@@ -18,7 +18,8 @@
 
 (define-lex-abbrevs
   (nothing-dot #\·)
-  (newlines (lx/+ (lx/or #\newline #\return #\, #\⋄)))
+  (newline (lx/or #\newline #\return #\, #\⋄))
+  (white-space (lx/- whitespace newline))
 
   
   (-? (lx/? #\¯))
