@@ -63,7 +63,7 @@ lhsArray  : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
 @lhsComp  : lhs-sub | lhsStrand
 /lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
 
-body : /"{" (stmt /"⋄")* stmt /["⋄"]
+body : /"{" /["⋄"] (stmt /"⋄")* stmt /["⋄"]
 
 FuncBlock : body /FUNC-BLOCK
 1M-block  : body  (1M-IMMEDIATE | 1M-DELAYED)
