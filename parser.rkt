@@ -1,5 +1,5 @@
 #lang brag
-# Mostly adaptated from the offical specification
+# Mostly adaptated from the offical grammer spec
 ; https://mlochbaum.github.io/BQN/spec/grammar.html
 
 #(...)? and [...] are equivalent
@@ -8,14 +8,14 @@
 ; that aren't needed after parsing
 ; https://docs.racket-lang.org/brag/#%28part._cuts-and-splices%29
 
-program : [stmt] (/"⋄" [stmt])*
-@stmt   : expr | import
-expr    : subExpr
+program : [line] (/"⋄" [line])*
+@line   : stmt | import
+import  : [lhsComp def] bqn-req
+stmt    : expr
+@expr    : subExpr
         | FuncExpr
         | 1M-Expr
         | 2M-Expr
-
-import : [lhsComp def] bqn-req
 
 @def : "←" | "⇐"
 @assign: def | "↩"
@@ -38,14 +38,14 @@ any      : atom | Func | 1Mod | 2Mod
 strand   : @any (/"‿" @any)+
 @subject : atom | strand
 
-/2M-Expr : 2Mod | 2MOD-CUSTOM assign 2M-Expr
-/1M-Expr : 1Mod | 1MOD-CUSTOM assign 1M-Expr
+2M-Expr : 2Mod | 2MOD-CUSTOM assign 2M-Expr
+1M-Expr : 1Mod | 1MOD-CUSTOM assign 1M-Expr
 
-Derv     : @Func |  Operand @1Mod | Operand @2Mod (subject | Func)
-@Operand : subject | Func | Derv
-Fork     : Derv  | (Operand | nothing) Derv Fork
-Train    : @Fork  | Derv Fork
-/FuncExpr : Train | FUNC-CUSTOM assign FuncExpr
+Derv      : @Func |  Operand @1Mod | Operand @2Mod (subject | Func)
+@Operand  : subject | Func | Derv
+Fork      : Derv  | (Operand | nothing) Derv Fork
+Train     : @Fork | Derv Fork
+FuncExpr : Train | FUNC-CUSTOM assign FuncExpr
 
 arg         : [subject | nothing] Derv subExpr 
 nothing     : [subject | nothing] Derv nothing | NOTHING
@@ -63,7 +63,7 @@ lhsArray  : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
 @lhsComp  : lhs-sub | lhsStrand
 /lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
 
-body : /"{" /["⋄"] (stmt /"⋄")* stmt /["⋄"]
+body : /"{" /["⋄"] (line /"⋄")* line /["⋄"]
 
 FuncBlock : body /FUNC-BLOCK
 1M-block  : body  (1M-IMMEDIATE | 1M-DELAYED)

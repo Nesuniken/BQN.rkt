@@ -6,8 +6,6 @@
   BQN/1-modifiers BQN/2-modifiers
   BQN/system-values BQN/prim-utils)
 
-;Core-----------------------------------------------------------------------------
-
 (define-macro-cases Derv
   [(Derv F) #'F]
   [(Derv F 1M  ) #'(1M F  )]
@@ -65,9 +63,6 @@
 
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
-
-
-(define-macro (stmt S) #'S)
 
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin

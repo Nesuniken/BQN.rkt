@@ -1,5 +1,5 @@
-#lang racket
-(require br/macro BQN/blocks BQN/system-values)
+#lang br
+(require BQN/blocks BQN/system-values)
 (provide (all-defined-out))
 
 (define-macro-cases select-ids
@@ -26,6 +26,14 @@
   [(import PATH)  #'(require PATH)]
   )
 
+(define-macro (FuncExpr EXPR)
+  #'EXPR)
+
+(define-macro (1M-Expr EXPR)
+  #'EXPR)
+
+(define-macro (2M-Expr EXPR)
+  #'EXPR)
 
 (define-macro-cases subExpr
   [(subExpr NAME ↩ VALUE)
@@ -34,76 +42,75 @@
    #'(subExpr NAME ↩ (FUNC NAME))]
   [(subExpr NAME FUNC ↩ ARG)
    #'(subExpr NAME ↩ (FUNC NAME ARG))]
-  [(subExpr NAME ASSIGN VALUE)
-   #'NAME]
+  [(subExpr (atom VALUE))
+   #'VALUE]
   [(subExpr VALUE)
    #'VALUE])
 
+(define-macro (stmt EXPR)
+  (with-pattern
+      ([(EXPORTS (NAMES ...) (VALUES ...) RESULT) (extract-defs #'EXPR)])
+    #'(begin
+        EXPORTS
+        (define NAMES VALUES) ...
+        RESULT
+        )))
 
-(define-macro (expr EXPR)
-  #'(begin
-      (get-defs EXPR)
-      (get-expr EXPR)
-      ))
-
-(define-macro-cases get-defs
-  [(get-defs (subExpr REST ...))
-   #'(get-defs (REST ...))]
-  [(get-defs (NAME ⇐ VALUE))
-   #'(begin
-       (provide NAME)
-       (get-defs (NAME ← VALUE)))]
-  [(get-defs (NAME ← VALUE))
-   #'(begin
-       (get-defs VALUE)
-       (define NAME (get-expr VALUE)))]
-  
-  [(get-defs (_ (body _ ...) _ ...))
-   #'(begin)]
-  
-  [(get-defs (ANY ...))
-   #'(get-defs ANY ...)]
-  [(get-defs ATOM)
-   #'(begin)]
-  [(get-defs FIRST REST ...)
-   #'(begin
-       (get-defs FIRST)
-       (get-defs REST ...))]
-  [(get-defs _ ...)
-   #'(begin)]
-  )
-
-(define-macro-cases get-expr  
-  [(get-expr (NAME ⇐ VALUE))
-   #'NAME]
-  [(get-expr (NAME ← VALUE))
-   #'NAME]
-  [(get-expr (subExpr VALUE))
-   #'(get-expr VALUE)]
-  [(get-expr (subExpr REST ...))
-   #'(subExpr REST ...)]
-  [(get-expr (NAME ↩ VALUE))
-   #'(begin (set! NAME VALUE) NAME)]
-
-  [(get-expr (BLOCK (body STMTS ...)))
-   #'(BLOCK STMTS ...)]
-  [(get-expr (BLOCK (body STMTS ...) REST ...))
-   #'(BLOCK (STMTS ...) REST ...)]
-
-  [(get-expr (expr REST ...))
-   #'(get-expr REST ...)]
-
-  [(get-expr ((ANY ...)))
-   #'(get-expr (ANY ...))]
-  
-  [(get-expr (STX PARAMS ...))
-   #'(get-expr STX () (PARAMS ...))]
-
-  [(get-expr STX (PREV ...) (NEXT REST ...))
-   #'(get-expr STX (PREV ... (get-expr NEXT)) (REST ...))]
-  [(get-expr STX (PARAMS ...) ())
-   #'(STX PARAMS ...)]
-
-  [(get-expr ATOM)
-   #'ATOM]
+(begin-for-syntax
+  (require racket/list racket/match br/list)
+  (define (find-defs stx)
+    (match (syntax-e stx)         
+      [(list _ name (app syntax-e (and (or '⇐ '←) sign)) value)
+       (let*-values
+           ([(exports defs vals expr)
+             (find-defs value)]
+            [(export)
+             (if (equal? sign '⇐)
+                 (cons name exports)
+                 exports)])
+         (values
+          export
+          (cons name defs)
+          (cons expr vals)
+          expr))]
+                  
+      [(list* _ (app syntax-e (list* 'body _)) _)
+       (values empty empty empty stx)]
+         
+      [(? cons? split-stx)
+       (for/fold
+        ([total-export '()]
+         [total-defs   '()]
+         [total-values '()]
+         [total-expr   '()]
+         #:result (values
+                   total-export
+                   total-defs
+                   total-values
+                   (datum->syntax stx total-expr stx)
+                   ))
+        ([stmt (in-list (reverse split-stx))])
+         (let-values
+             ([(export defs vals expr)
+               (find-defs stmt)])
+           (values
+            (append export total-export)
+            (append defs   total-defs)
+            (append vals total-values)
+            (cons   expr   total-expr)
+            )
+           )
+         )]
+         
+      [_ (values empty empty empty stx)]
+      )
+    )
+  (define (extract-defs stmt-stx)
+    (define-values (exports defs vals expr) (find-defs stmt-stx))
+    (define export-stx
+      (if (empty? exports)
+          #'(begin)
+          #`(provide ,@exports)))
+    (list (datum->syntax expr export-stx expr) defs vals expr)
+    )
   )
