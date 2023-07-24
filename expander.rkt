@@ -64,13 +64,16 @@
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
 
-(define-macro (bqn-module (program EXPR ...))
+(define-macro (bqn-module PROGRAM)
   #'(#%module-begin
      (module configure-runtime racket/base
        (require BQN/setup)
        (setup!))
      (array-strictness #f)
-     EXPR ...))
+     PROGRAM))
+
+(define-macro (program EXPR ...)
+  #'(begin EXPR ...))
 
 (define (to-func x)
   (if (procedure? x)
