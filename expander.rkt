@@ -64,6 +64,11 @@
 (define-macro (atom X) #'X)
 (define-macro (Func F) #'F)
 
+(define-macro (bqn-interaction (program EXPR ...))
+  #'(#%top-interaction
+     (begin EXPR ...)
+     ))
+
 (define-macro (bqn-module (program EXPR ...))
   #'(#%module-begin
      (module configure-runtime racket/base
@@ -83,10 +88,12 @@
    #'((to-func ID) ARGS ...)])
 
 (provide
- #%top #%datum #%top-interaction
+ #%top #%datum 
  (all-defined-out)
  (all-from-out
   BQN/assign BQN/blocks
   BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers
   BQN/system-values)
- (rename-out [bqn-module #%module-begin] [bqn-app #%app]))
+ (rename-out [bqn-module #%module-begin]
+             [bqn-interaction #%top-interaction]
+             [bqn-app #%app]))
