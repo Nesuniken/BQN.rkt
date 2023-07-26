@@ -1,7 +1,7 @@
 #lang racket/base
 (require br-parser-tools/lex racket/list racket/string racket/match
-         (prefix-in lx/ br-parser-tools/lex-sre))
-(provide (all-defined-out))
+         br-parser-tools/lex-sre)
+(provide (all-defined-out) (prefix-out lx/ (all-from-out br-parser-tools/lex-sre)))
 
 (define/match (quote-filter list-string)
   [((list* #\" #\" rest))
@@ -18,54 +18,54 @@
 
 (define-lex-abbrevs
   (nothing-dot #\·)
-  (newline (lx/or #\newline #\return #\, #\⋄))
-  (white-space (lx/- whitespace newline))
+  (newline (or #\newline #\return #\, #\⋄))
+  (white-space (- whitespace newline))
 
   
-  (-? (lx/? #\¯))
-  (int (lx/+ (lx/or #\_ (lx// #\0 #\9))))
-  (decimal (lx/: int (lx/? (lx/: #\. int))))
+  (-? (? #\¯))
+  (int (+ (or #\_ (/ #\0 #\9))))
+  (decimal (: int (? (: #\. int))))
 
-  (exp (lx/? (lx/: (char-set "Ee") -? int)))
-  (bqn-real (lx/: -? (lx/or #\∞ (lx/: #\π exp))))
-  (rkt-real (lx/: -? decimal exp))
-  (real (lx/or bqn-real rkt-real))
+  (exp (? (: (char-set "Ee") -? int)))
+  (bqn-real (: -? (or #\∞ (: #\π exp))))
+  (rkt-real (: -? decimal exp))
+  (real (or bqn-real rkt-real))
   
-  (rkt-number (lx/: rkt-real (lx/? (lx/: (char-set "Ii") rkt-real))))
-  (number (lx/: real (lx/? (lx/: (char-set "Ii") real))))
+  (rkt-number (: rkt-real (? (: (char-set "Ii") rkt-real))))
+  (number (: real (? (: (char-set "Ii") real))))
   
-  (string (lx/: #\" (lx/* (lx/or (lx/~ #\") (lx/: #\" #\"))) #\"))
+  (string (: #\" (* (or (~ #\") (: #\" #\"))) #\"))
   
   (special-sub  (char-set "𝕨𝕤𝕩𝕗𝕘𝕣"))
   (special-func (char-set "𝕎𝕊𝕏𝔽𝔾"))
-  (non-special (lx/- alphabetic #\π special-sub special-func))
+  (non-special (- alphabetic #\π special-sub special-func))
 
-  (•? (lx/? #\•))
-  (kt (lx/: (lx/* #\_) (char-set "Kk") (lx/* #\_) (char-set "Tt")))
+  (•? (? #\•))
+  (kt (: (* #\_) (char-set "Kk") (* #\_) (char-set "Tt")))
   (rkt-id
-   (lx/+ (lx/~ #\space #\newline #\tab #\( #\) #\[ #\] #\{ #\} #\⟨ #\⟩ #\" #\, #\' #\` #\; #\| #\\)))
+   (+ (~ #\space #\newline #\tab #\( #\) #\[ #\] #\{ #\} #\⟨ #\⟩ #\" #\, #\' #\` #\; #\| #\\)))
 
-  (trailing-char (lx/or #\_ non-special numeric))
+  (trailing-char (or #\_ non-special numeric))
 
-  (rkt-sub (lx/: #\• (lx/? (lx/: #\r kt)) #\. rkt-id))
-  (sub-name (lx/: •? (lx/: non-special (lx/* trailing-char))))
-  (subject (lx/or sub-name special-sub rkt-sub))
+  (rkt-sub (: #\• (? (: #\r kt)) #\. rkt-id))
+  (sub-name (: •? (: non-special (* trailing-char))))
+  (subject (or sub-name special-sub rkt-sub))
 
-  (rkt-func (lx/: "•R" kt #\. rkt-id))
-  (func-name (lx/: •? (lx// #\A #\Z) (lx/* trailing-char)))
+  (rkt-func (: "•R" kt #\. rkt-id))
+  (func-name (: •? (/ #\A #\Z) (* trailing-char)))
   (func-prim (char-set "⍳+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"))
-  (func (lx/or func-prim func-name special-func rkt-func))
+  (func (or func-prim func-name special-func rkt-func))
 
-  (rkt-1mod (lx/: "•_" (char-set "Rr") kt #\. rkt-id))
-  (1mod-id   (lx/: #\_ (lx/+ trailing-char)))
-  (1mod-name (lx/: •? 1mod-id))
+  (rkt-1mod (: "•_" (char-set "Rr") kt #\. rkt-id))
+  (1mod-id   (: #\_ (+ trailing-char)))
+  (1mod-name (: •? 1mod-id))
   (1mod-prim (char-set "`˙˘¨⌜´˝⁼˜"))
-  (1mod (lx/or "_𝕣" 1mod-prim 1mod-name rkt-1mod))
+  (1mod (or "_𝕣" 1mod-prim 1mod-name rkt-1mod))
 
-  (rkt-2mod (lx/: "•_" (char-set "Rr") kt "_." rkt-id))
-  (2mod-name (lx/: •? 1mod-id #\_))
+  (rkt-2mod (: "•_" (char-set "Rr") kt "_." rkt-id))
+  (2mod-name (: •? 1mod-id #\_))
   (2mod-prim (char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"))
-  (2mod (lx/or "_𝕣_" 2mod-prim 2mod-name rkt-2mod))
+  (2mod (or "_𝕣_" 2mod-prim 2mod-name rkt-2mod))
 
   (notation (char-set "π∞¯"))
   (brackets (char-set "⟨⟩[](){}"))
