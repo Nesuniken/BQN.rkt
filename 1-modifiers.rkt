@@ -1,5 +1,6 @@
 #lang racket/base
-(require math/array racket/match racket/undefined racket/provide racket/function racket/vector racket/list BQN/prim-utils)
+(require  racket/match racket/undefined racket/provide racket/function racket/vector racket/list
+          math/array BQN/prim-utils)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define ((BQN⁼ F) #:undo? [undo? #f] . args)

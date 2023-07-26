@@ -1,16 +1,16 @@
 #lang racket/base
-(require br-parser-tools/lex racket/list racket/string
+(require br-parser-tools/lex racket/list racket/string racket/match
          (prefix-in lx/ br-parser-tools/lex-sre))
 (provide (all-defined-out))
 
-(define (quote-removal list-str [counter -1])
-  (cond
-    [(empty? list-str) '()]
-    [(equal? (remainder counter 2) 1)
-     (quote-removal (rest list-str) (add1 counter))]
-    [else (cons (first list-str)
-                (quote-removal (rest list-str) (add1 counter)))]
-    )
+(define/match (quote-filter list-string)
+  [((list* #\" #\" rest))
+   (cons #\" (quote-filter rest))]
+  [((list* #\" rest))
+   (quote-filter rest)]
+  [((list* first rest))
+   (cons first (quote-filter rest))]
+  [('()) empty]
   )
 
 (define (trim-rkt id)

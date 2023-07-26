@@ -123,7 +123,7 @@
       (token 'CHARACTER (second (string->list lexeme)))]
  
      [string
-      (token 'STRING (list->array (quote-removal (string->list lexeme))))]
+      (token 'STRING (list->array (quote-filter (string->list lexeme))))]
 
      [(lx/: #\• string)
       (token 'RKT-STRING (substring lexeme 2 (sub1 (string-length lexeme))))]

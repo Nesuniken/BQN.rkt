@@ -49,9 +49,9 @@
 
 (define-macro (stmt EXPR)
   (with-pattern
-      ([(EXPORTS (NAMES ...) (VALUES ...) RESULT) (extract-defs #'EXPR)])
+      ([((EXPORTS ...) (NAMES ...) (VALUES ...) RESULT) (extract-defs #'EXPR)])
     #'(begin
-        EXPORTS
+        EXPORTS ...
         (define NAMES VALUES) ...
         RESULT
         )))
@@ -109,8 +109,9 @@
     (define-values (exports defs vals expr) (find-defs stmt-stx))
     (define export-stx
       (if (empty? exports)
-          #'(begin)
-          #`(provide ,@exports)))
-    (list (datum->syntax expr export-stx expr) defs vals expr)
+          empty
+          (list `(provide ,@exports))
+          ))
+    (list export-stx defs vals expr)
     )
   )
