@@ -22,16 +22,16 @@
     [(number? w)
      (- w x)]))
 
-(define/match ((BQN+ [undo #f]) . args)
+(define/match ((BQN+ [undo 0]) . args)
   [(_ (list)) 0]
   [(_ (list x))
    ((pv-monad conjugate) x)]
-  [(#f (list x w))
+  [(0 (list x w))
    ((pv-dyad add) x w)]
-  [(#t (list x w))
+  [(1 (list x w))
    ((pv-dyad subtract) x w)])
 
-(define/match ((BQN- [undo #f]) . args)
+(define/match ((BQN- [undo 0]) . args)
   [(_ (list)) 0]
   [(_ (list x))
    ((pv-monad -) x)]
@@ -41,32 +41,32 @@
 (define (pv-equal test) 
   (pv-dyad (λ (x w) (if (test x w) 1 0))))
 
-(define/match ((BQN= [undo #f]) . args)
-  [(#t   _ ) (undo-error #\=)]
-  [(#f '( )) 1]
-  [(#f (list x  )) (array-dims x)]
-  [(#f (list x w)) ((pv-equal equal?) x w)])
+(define/match ((BQN= [undo 0]) . args)
+  [(1   _ ) (undo-error #\=)]
+  [(0 '( )) 1]
+  [(0 (list x  )) (array-dims x)]
+  [(0 (list x w)) ((pv-equal equal?) x w)])
 
-(define/match ((BQN≡ [undo #f]) . args)
-  [(#t _) (undo-error #\≡)]
-  [(#f (list (? array? x)))
+(define/match ((BQN≡ [undo 0]) . args)
+  [(1 _) (undo-error #\≡)]
+  [(0 (list (? array? x)))
    (+ 1 (array-all-max (array-map BQN≡ x)))]
-  [(#f (list _)) 0]
-  [(#f (list x w)) (if (equal? x w) 1 0)])
+  [(0 (list _)) 0]
+  [(0 (list x w)) (if (equal? x w) 1 0)])
 
-(define/match ((BQN≠ [undo #f]) . args)
-  [(#t   _) (undo-error #\≠)]
-  [(#f '( )) 0]
-  [(#f (list x  ))
+(define/match ((BQN≠ [undo 0]) . args)
+  [(1   _) (undo-error #\≠)]
+  [(0 '( )) 0]
+  [(0 (list x  ))
    (vector-ref (array-shape x) 0)]
-  [(#f (list x w))
+  [(0 (list x w))
    ((pv-equal (λ (x w) (not (equal? w x)))) x w)]
   )
 
-(define/match ((BQN≢ [undo #f]) . args)
-  [(#t _) (undo-error #\≢)]
-  [(#f (list x  )) (vector->array (array-shape x))]
-  [(#f (list x w)) (if (equal? x w) 0 1)])
+(define/match ((BQN≢ [undo 0]) . args)
+  [(1 _) (undo-error #\≢)]
+  [(0 (list x  )) (vector->array (array-shape x))]
+  [(0 (list x w)) (if (equal? x w) 0 1)])
 
 (define (pv-compare test)  
   (define (compare x w)
@@ -79,36 +79,38 @@
   
   (pv-dyad (λ (x w) (if (test (compare x w) 0) 1 0))))
 
-(define ((BQN≤ [undo #f]) x w)
-  (if undo (undo-error #\≤) (pv-compare <= x w)))
+(define ((BQN≤ [undo 0]) x w)
+  (if (zero? undo)
+      (pv-compare <= x w)
+      (undo-error #\≤)))
 
-(define/match ((BQN< [undo #f]) . args)
-  [(#t (list x  )) (first (array->list x))]
-  [(#f (list x  )) (array x)]
-  [(#f (list x w)) ((pv-compare <) x w)])
+(define/match ((BQN< [undo 0]) . args)
+  [(1 (list x  )) (first (array->list x))]
+  [(0 (list x  )) (array x)]
+  [(0 (list x w)) ((pv-compare <) x w)])
 
-(define/match ((BQN> [undo #f]) . args)
-  [(#t _) (undo-error #\>)]
-  [(#f '()) 0]
-  [(#f (list x))
+(define/match ((BQN> [undo 0]) . args)
+  [(1 _) (undo-error #\>)]
+  [(0 '()) 0]
+  [(0 (list x))
    (let ([inner-check (array-map array? x)])
      (cond
        [(array-all-and inner-check)
         (array-list->array (array->list x))]
        [(not (array-all-or inner-check))
         x]))]
-  [(#f (list x w)) ((pv-compare >) x w)])
+  [(0 (list x w)) ((pv-compare >) x w)])
 
-(define/match ((BQN≥ [undo #f]) . args)
-  [(#t _) (undo-error #\≥)]
-  [(#f '()) 1]
-  [(#f (list x w)) (pv-compare >=)])
+(define/match ((BQN≥ [undo 0]) . args)
+  [(1 _) (undo-error #\≥)]
+  [(0 '()) 1]
+  [(0 (list x w)) (pv-compare >=)])
 
-(define/match ((BQN⌊ [undo #f]) . args)
-  [(#t _) (undo-error #\⌊)]
-  [(#f '()) -inf.0]
-  [(#f (list x)) ((pv-monad floor) x)]
-  [(#f (list x w))
+(define/match ((BQN⌊ [undo 0]) . args)
+  [(1 _) (undo-error #\⌊)]
+  [(0 '()) -inf.0]
+  [(0 (list x)) ((pv-monad floor) x)]
+  [(0 (list x w))
    (let ([bqn-min
          (lambda (x w)
            (cond
@@ -121,11 +123,11 @@
              [w]))])
      ((pv-dyad bqn-min) x w))])
 
-(define/match ((BQN⌈ [undo #f]) . args)
-  [(#t _) (undo-error #\⌈)]
-  [(#f '()) +inf.0]
-  [(#f (list x  )) ((pv-monad ceiling) x)]
-  [(#f (list x w))
+(define/match ((BQN⌈ [undo 0]) . args)
+  [(1 _) (undo-error #\⌈)]
+  [(0 '()) +inf.0]
+  [(0 (list x  )) ((pv-monad ceiling) x)]
+  [(0 (list x w))
    (let ([bqn-max
          (lambda (x w)
            (cond
@@ -138,19 +140,19 @@
              [x]))])
      ((pv-dyad bqn-max) x w))])
 
-(define ((BQN¬ [undo #f]) [x 0] [w 0])
+(define ((BQN¬ [undo 0]) [x 0] [w 0])
   ((pv-dyad (λ (x* w*)(- (+ 1 w*) x*))) x w))
 
-(define ((BQN⍳ [undo #f]) x [w 0])
-  (if undo
-      (undo-error #\⍳)
-      (make-rectangular w x)))
+(define ((BQN⍳ [undo 0]) x [w 0])
+  (if (zero? undo)
+      (make-rectangular w x)
+      (undo-error #\⍳)))
 
 (define BQN×
   (let ([sign (lambda (x) (if (equal? x 0) 0 (/ x (magnitude x))))])
     (pv-func (vector 1 sign (cons * /)))))
 
-(define/match ((BQN÷ [undo #f]) . args)
+(define/match ((BQN÷ [undo 0]) . args)
   [(_ (list x))
    ((pv-monad /) x)]
   [(_ (list x w))
@@ -158,7 +160,7 @@
 
 (define BQN√
   (pv-func
-   (vector #f
+   (vector 0
            (cons sqrt (λ (x) (* x x)))
            (cons (λ (x w) (expt x (/ w))) (swap expt)))))
 
@@ -166,12 +168,12 @@
   (pv-func (vector 1 (cons exp log) (cons (swap expt) log))))
 
 (define BQN\|
-  (pv-func (vector #f magnitude (swap modulo))))
+  (pv-func (vector 0 magnitude (swap modulo))))
 
-(define BQN∧
-  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
+;(define BQN∧
+;  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
 
-(define ((BQN∨ [undo #f]) x w)
-  (if undo
-      (undo-error #\∨)
-      (pv-dyad (λ (x w) (- (+ x w) (* x w))))))
+(define ((BQN∨ [undo 0]) x w)
+  (if (zero? undo)
+      (pv-dyad (λ (x w) (- (+ x w) (* x w))))
+      (undo-error #\∨)))
