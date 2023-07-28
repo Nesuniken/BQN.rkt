@@ -6,9 +6,6 @@
 
 (define (undo-error name) (error name "isn't invertable"))
 
-(define (undo F [undo? #t])
-  (curry F #:undo? undo?))
-
 (define (find-fill x)
   (cond
     [(array-all-and (array-map number? x)) 0]
@@ -29,13 +26,13 @@
        (array-map (pv-dyad dyad) x (array w))]
       [(dyad x w)])))
 
-(define/match (((pv-func arities) #:undo? [undo? #f]) . args)
+(define/match (((pv-func arities) [undo? #f]) . args)
   [((vector (and (not #f) ids) _ _) u? (list))
-   ((pv-func ids) #:undo? u?)]
+   ((pv-func ids) u?)]
   [((vector _ (and (not #f) monads) _ ...) u? (list x))
-   ((pv-func monads) x #:undo? u?)]
+   ((pv-func monads) x u?)]
   [((vector _ _ (and (not #f) dyads)) u? (list x w))
-   ((pv-func dyads) x w #:undo? u?)]
+   ((pv-func dyads) x w u?)]
   
   [((cons f f-inv) u? _)
    (apply (pv-func (if u? f-inv f)) args)]
