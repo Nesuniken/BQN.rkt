@@ -29,7 +29,7 @@
        (array-map (pv-dyad dyad) x (array w))]
       [(dyad x w)])))
 
-(define/match ((pv-func arities) #:undo? [undo? #f] . args)
+(define/match (((pv-func arities) #:undo? [undo? #f]) . args)
   [((vector (and (not #f) ids) _ _) u? (list))
    ((pv-func ids) #:undo? u?)]
   [((vector _ (and (not #f) monads) _ ...) u? (list x))

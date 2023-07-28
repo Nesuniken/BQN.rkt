@@ -127,7 +127,7 @@
      [(lx/: #\• string)
       (token 'RKT-STRING (substring lexeme 2 (sub1 (string-length lexeme))))]
      
-     [(lx/: #\# (lx/* (lx/~ #\newline)))
+     [comment
       (token 'COMMENT (substring lexeme 1) #:skip? #t)]
      
      [(lx/+ white-space) (token lexeme #:skip? #t)]

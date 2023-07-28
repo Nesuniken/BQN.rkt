@@ -30,9 +30,9 @@
   )
 
 (define-macro-cases arg
-  [(arg nothing F X) #'(F X)]
-  [(arg   F X) #'(F X)]
-  [(arg W F X) #'(F X W)]
+  [(arg nothing F X) #'((F) X)]
+  [(arg   F X) #'((F) X)]
+  [(arg W F X) #'((F) X W)]
   )
 
 (define-macro a-list  #'strand)

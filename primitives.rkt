@@ -3,10 +3,10 @@
          (only-in BQN/arithmetic BQN> BQN≠))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define (BQN⊣ x [w #f])
+(define ((BQN⊣ #:undo? [undo? #f]) x [w #f])
   (if w w x))
 
-(define (BQN⊢ x [w #f] #:undo? [undo? #f])
+(define ((BQN⊢ #:undo? [undo? #f]) x [w #f])
   x)
 
 (define (deshape x)
@@ -49,26 +49,26 @@
              (array-reshape (build-array (vector resize) x-loop) (make-dims v-d-ceil)))])))
   )
 
-(define/match (BQN⥊ #:undo? [undo? #f] . args)
+(define/match ((BQN⥊ #:undo? [undo? #f]) . args)
   [(#t  _) (undo-error #\⥊)]
   [(#f (list x  )) (deshape x)]
   [(#f (list x w)) (reshape x w)])
 
-(define/match (BQN∾ #:undo? [undo? #f] . args)
+(define/match ((BQN∾ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\∾)]
   [(#f (list x  ))
    (array-all-fold x (λ (a b) (array-append* (list a b))))]
   [(#f (list x w))
    (array-append* (list x w))])
 
-(define/match (BQN≍ #:undo? [undo? #f] . args)
+(define/match ((BQN≍ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\≍)]
   [(#f (list (? array? x)))
    (array-axis-insert x 0)]
   [(#f (list x)) (array #[x])]
   [(#f (list x w)) (array #[w x])])
 
-(define (BQN⋈ #:undo? [undo? #f] . args)
+(define ((BQN⋈ #:undo? [undo? #f]) . args)
   (if undo?
       (undo-error #\⋈)
       (array->list args)))
@@ -76,7 +76,7 @@
 (define (pad-slices slices)
   (append slices (list ::...)))
 
-(define/match ((↑↓-core char slice) #:undo? [undo? #f] . args)
+(define/match (((↑↓-core char slice) #:undo? [undo? #f]) . args)
   [(_ _ #t _) (undo-error char)]
   [(_ _ #f (list x))
    (build-array
@@ -91,14 +91,14 @@
 (define BQN↓
   (↑↓-core #\↓ (λ (i) (:: i #f))))
 
-(define/match (BQN↕ #:undo? [undo? #f] . args)
+(define/match ((BQN↕ #:undo? [undo? #f]) . args)
   [(#f x) (array-map
            vector->array
            (indexes-array
             (if (array? x) (array->vector x) (vector x))))]
   )
 
-(define/match ((«»-core char) #:undo? [undo? #f] . args)
+(define/match (((«»-core char) #:undo? [undo? #f]) . args)
   [(_ #t _) (undo-error char)]
   [(_ #f (list x))
    ((«»-core char) x (array (find-fill x)))]
@@ -111,7 +111,7 @@
 (define (rotate-range start length)
   (map (λ (n) (modulo n length)) (range start (+ start length))))
 
-(define (BQN⌽ x [w #f] #:undo? [undo? #f])
+(define ((BQN⌽ #:undo? [undo? #f]) x [w #f])
   (if (not w)
       (array-slice-ref x (list (:: #f #f -1) ::...))
       (if undo?
@@ -121,14 +121,14 @@
                   (vector-map rotate-range (array->vector w) (array-shape x)))])
             (array-slice-ref x (pad-slices slices))))))
 
-(define (BQN⍉ x [w #f] #:undo? [undo? #f])
+(define ((BQN⍉ #:undo? [undo? #f]) x [w #f])
   (if (not w)
       (array-axis-permute x (rotate-range (if undo? -1 1) (array-dims x)))
       (let ([w-list (array->list w)])
         (array-axis-permute
          x (append w-list (remove* w-list (range (array-dims x))))))))
 
-(define/match (BQN/ #:undo? [undo? #f] . args)
+(define/match ((BQN/ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\/)]
   [(#f (list x))
    (BQN/ (index-array (vector (BQN≠ x))) x)]
@@ -139,7 +139,7 @@
       (λ (l i) (make-array (vector l) i)) w x)))]
   )
 
-(define (BQN⊏ x [w (array 0)] #:undo? [undo? #f])
+(define ((BQN⊏ #:undo? [undo? #f]) x [w (array 0)])
   (cond
     [undo? (undo-error #\⊏)]
     [(array-all-and (array-map array? w))
@@ -147,7 +147,7 @@
     [(array-all-and (array-map integer? w))
      (array-slice-ref x (list (array->list w) ::...))]))
 
-(define/match (BQN⊑ #:undo? [undo? #f] . args)
+(define/match ((BQN⊑ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\⊑)]
   [(#f (list x)) (array-ref x (make-vector (array-dims x) 0))]
   [(#f (list x w)) (array-indexes-ref
@@ -160,7 +160,7 @@
   (for/hash ([k seq] [v (in-naturals)])
             (values k v)))
 
-(define/match (BQN⊐ #:undo? [undo? #f] . args)
+(define/match ((BQN⊐ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\⊐)]
   [(#f (list x)) (array-map (λ (k) (hash-ref (⊐hash (unique x)) k)) x)]
   [(#f (list x w))
@@ -198,7 +198,7 @@
                        (first v)))]
                [(BQN≠ w)])))
 
-(define/match (BQN⊒ #:undo? [undo? #f] . args)
+(define/match ((BQN⊒ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\⊒)]
   [(#f (list x)) (occurence-count x)]
   [(#f (list x w)) (prog-index x w)])
@@ -210,7 +210,7 @@
                  0
                  (begin (set-add! tracker n) 1))))
 
-(define/match (BQN∊ #:undo? [undo? #f] . args)
+(define/match ((BQN∊ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\∊)]
   [(#f (list x)) (mark-firsts x)]
   [(#f (list x w))
@@ -220,10 +220,10 @@
           1 0))
     w)])
 
-(define/match (BQN⍷ #:undo? [undo? #f] . args)
+(define/match ((BQN⍷ #:undo? [undo? #f]) . args)
   [(#t _) (undo-error #\⍷)]
   [(#f (list x)) (list->array (unique x))])
 
-(define/match (BQN! x [w "Assertion error"] #:undo? [undo? #f])
+(define/match ((BQN! #:undo? [undo? #f]) x [w "Assertion error"])
   [(1 _ _) 1]
   [(_ _ _) (error w)])

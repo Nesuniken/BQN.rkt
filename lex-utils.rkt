@@ -20,6 +20,7 @@
   (nothing-dot #\·)
   (newline (or #\newline #\return #\, #\⋄))
   (white-space (- whitespace newline))
+  (comment (: #\# (* (~ #\newline #\return))))
 
   
   (-? (? #\¯))
