@@ -224,6 +224,7 @@
   [(#t _) (undo-error #\⍷)]
   [(#f (list x)) (list->array (unique x))])
 
-(define/match ((BQN! #:undo? [undo? #f]) x [w "Assertion error"])
-  [(1 _ _) 1]
-  [(_ _ _) (error w)])
+(define ((BQN! #:undo? [undo? #f]) x [w "Assertion error"])
+  (if (equal? x 1)
+      1 (error w))
+  )
