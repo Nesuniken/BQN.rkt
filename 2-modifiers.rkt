@@ -4,17 +4,17 @@
          (only-in BQN/1-modifiers BQN˜ BQN⁼))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define (BQN∘ F G #:undo? [undo? #f])
+(define ((BQN∘ F G) #:undo? [undo? #f])
   (if undo?
       (compose1 (G #:undo? #t) (F #:undo? #t))
       (compose1 (F) (G))))
 
-(define ((BQN○ F G #:undo? [undo? #f]) . args)
+(define (((BQN○ F G) #:undo? [undo? #f]) . args)
   (if undo?
       ((G #:undo? undo?) (apply (F #:undo? undo?) (first args) (map (G) (rest args))))
       (apply F (map (G) args))))
 
-(define/match ((BQN⊸ F G #:undo? [undo? #f]) . args)
+(define/match (((BQN⊸ F G) #:undo? [undo? #f]) . args)
   [((? procedure?) _ _ (list x w))
    ((G #:undo? undo?) x ((F) w))]
   [((? procedure?) _ #f (list x))
@@ -22,7 +22,7 @@
   [((not (? procedure?)) _ _ (list x))
    ((G #:undo? undo?) x F)])
 
-(define/match ((BQN⟜ F G #:undo? [undo? #f]) . args)
+(define/match (((BQN⟜ F G) #:undo? [undo? #f]) . args)
   [(_ (not (? procedure?)) #f (list x))
    (F G x)]
   [(_ (not (? procedure?)) #t (list x))
@@ -32,7 +32,7 @@
   [(_ (? procedure?) #t (list x w))
    ((BQN∘ F G #:undo? #t) x w)])
 
-(define ((BQN⊘ F G #:undo? [undo? #f]) x [w undefined] )
+(define (((BQN⊘ F G) #:undo? [undo? #f]) x [w undefined] )
   (if (equal? w undefined)
       ((F #:undo? undo?) x)
       ((G #:undo? undo?) x w)))
@@ -44,19 +44,19 @@
         [(x  ) (array-map (λ (G x  ) (G x  )) choice (array x))]
         [(x w) (array-map (λ (G x w) (G x w)) choice (array x) (array w))])))
 
-(define (BQN◶ F g #:undo? [undo? #f])
+(define ((BQN◶ F g) #:undo? [undo? #f])
   (if (not undo?)
       (compose1 apply-choice BQN⊑ (F))
       (undo-error "◶")))
 
-(define (BQN⎊ F G #:undo? [undo? #f])
+(define ((BQN⎊ F G) #:undo? [undo? #f])
   (if (not undo?)
       (case-lambda
         [(x  ) (with-handlers ([exn:fail? (λ (e) (λ (x  ) ((G) x  )))]) ((F) x  ))]
         [(x w) (with-handlers ([exn:fail? (λ (e) (λ (x w) ((G) x w)))]) ((F) x w))])
       (undo-error "⎊")))
 
-(define/match ((BQN⍟ F g #:undo? [undo? #f]) . args)
+(define/match (((BQN⍟ F g) #:undo? [undo? #f]) . args)
   [(_ (? array?) _ _)
    (array-map (λ (g*) (apply (BQN⍟ F g*) args)) g)]
   [(_ (? procedure?) _ _)
