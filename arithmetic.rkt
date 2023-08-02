@@ -2,8 +2,6 @@
 (require math/array racket/match racket/provide racket/math racket/list BQN/prim-utils)
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
-(define  π pi)
-
 (define (add x w)
   (cond
     [(number? x)
@@ -24,17 +22,20 @@
 
 (define/match ((BQN+ [undo 0]) . args)
   [(_ (list)) 0]
-  [(_ (list x))
+  [(-1 (list x)) ((pv-dyad /) x 2)]
+  [( _ (list x))
    ((pv-monad conjugate) x)]
   [(0 (list x w))
    ((pv-dyad add) x w)]
-  [(1 (list x w))
-   ((pv-dyad subtract) x w)])
+  [(_ (list x w))
+   ((pv-dyad subtract) w x)])
 
 (define/match ((BQN- [undo 0]) . args)
   [(_ (list)) 0]
   [(_ (list x))
    ((pv-monad -) x)]
+  [(-1 (list x w))
+   ((pv-dyad add) x w)]
   [(_ (list x w))
    ((pv-dyad subtract) x w)])
 
@@ -148,9 +149,16 @@
       (make-rectangular w x)
       (undo-error #\⍳)))
 
-(define BQN×
-  (let ([sign (lambda (x) (if (equal? x 0) 0 (/ x (magnitude x))))])
-    (pv-func (vector 1 sign (cons * /)))))
+(define (sign x)
+  (if (equal? x 0) 0 (/ x (magnitude x))))
+
+(define/match ((BQN× [undo 0]) . args)
+  [(_ '()) 1]
+  [(-1 (list x))   ((pv-monad sqrt) x)]
+  [( 0 (list x))   ((pv-monad sign) x)]
+  [( 0 (list x w)) ((pv-dyad *) x w)]
+  [( _ (list x w)) ((pv-dyad /) w x)]
+  )
 
 (define/match ((BQN÷ [undo 0]) . args)
   [(_ (list x))
@@ -173,7 +181,8 @@
 ;(define BQN∧
 ;  (procedure-reduce-keyword-arity BQN× 2 '() '(#:undo?)))
 
-(define ((BQN∨ [undo 0]) x w)
-  (if (zero? undo)
-      (pv-dyad (λ (x w) (- (+ x w) (* x w))))
-      (undo-error #\∨)))
+(define (BQN∨ [undo 0])
+  (case undo
+    [( 0) (pv-dyad (λ (x w) (- (+ x w) (* x w))))]
+    )
+  )

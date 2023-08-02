@@ -8,11 +8,11 @@
 
 (define BQN˙ const)
 
-(define (((BQN˜ F) [undo 0]) x [w undefined])
-  (define func (F undo))
-  (if (equal? w undefined)
-      (func x x)
-      (func w x)))
+(define/match (((BQN˜ F) [undo 0]) . args)
+  [(_ 0 (list x))   ((F undo) x x)]
+  [(_ 0 (list x w)) ((F undo) w x)]
+  [(_ _ _) (apply (F (- undo)) args)]
+  )
 
 (define (((BQN¨ F) [undo 0]) . args)
   (apply array-map (F undo) args))
