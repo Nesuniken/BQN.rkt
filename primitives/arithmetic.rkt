@@ -1,5 +1,5 @@
 #lang racket/base
-(require math/array racket/match racket/provide racket/math racket/list BQN/prim-utils)
+(require math/array racket/match racket/provide racket/math racket/list "utilities.rkt")
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define (add x w)

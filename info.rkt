@@ -4,3 +4,6 @@
 (define deps '("brag-lib"
                "beautiful-racket-macro"
                "br-parser-tools-lib"))
+
+(define collection "BQN")
+

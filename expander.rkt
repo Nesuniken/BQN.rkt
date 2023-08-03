@@ -1,10 +1,8 @@
 #lang racket
 (require
-  BQN/assign BQN/blocks
+  "assign.rkt" "blocks.rkt"
   racket/stxparam math/array br/macro 
-  BQN/primitives BQN/arithmetic
-  BQN/1-modifiers BQN/2-modifiers
-  BQN/system-values BQN/prim-utils)
+  "primitives/primitives.rkt")
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -88,8 +86,5 @@
 (provide
  #%top #%datum #%top-interaction
  (all-defined-out)
- (all-from-out
-  BQN/assign BQN/blocks
-  BQN/primitives BQN/arithmetic BQN/1-modifiers BQN/2-modifiers
-  BQN/system-values)
+ (all-from-out "assign.rkt" "blocks.rkt" "primitives/primitives.rkt")
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

@@ -7,7 +7,7 @@
   racket/list
   math/array
   (except-in brag/support ::)
-  BQN/lex-utils)
+  "lex-utils.rkt")
 
 (provide bqn-tokenizer)
 

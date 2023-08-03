@@ -1,5 +1,5 @@
 #lang br
-(require BQN/blocks BQN/system-values)
+(require "blocks.rkt"  "primitives/primitives.rkt")
 (provide (all-defined-out))
 
 (define-macro-cases select-ids

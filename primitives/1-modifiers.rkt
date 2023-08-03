@@ -1,6 +1,6 @@
 #lang racket/base
 (require  racket/match racket/undefined racket/provide racket/function racket/vector racket/list
-          math/array BQN/prim-utils)
+          math/array "utilities.rkt")
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define ((BQN⁼ F) [undo 0])

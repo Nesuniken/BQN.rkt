@@ -4,6 +4,12 @@
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))
 
+(define/match ((BQN⊑ [undo 0]) . args)
+  [(1 _) (undo-error #\⊑)]
+  [(0 (list x)) (array-ref x (make-vector (array-dims x) 0))]
+  [(0 (list x w)) (array-indexes-ref
+                    x (array-map (λ (n) (if (array? n) (array->vector n) n)) w))])
+
 (define (undo-error name) (error name "isn't invertable"))
 
 (define (find-fill x)

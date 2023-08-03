@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/port BQN/lexer BQN/parser)
+(require racket/port "lexer.rkt" "parser.rkt")
 (provide setup!)
 
 (define unread? #t)

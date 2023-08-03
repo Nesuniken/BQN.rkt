@@ -1,7 +1,10 @@
 #lang racket/base
-(require math/array racket/match racket/provide racket/list racket/vector racket/set BQN/prim-utils
-         (only-in BQN/arithmetic BQN> BQN≠))
-(provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
+(require math/array racket/match racket/provide racket/list racket/vector racket/set
+         "utilities.rkt" "arithmetic.rkt" "1-modifiers.rkt" "2-modifiers.rkt" "system-values.rkt")
+(provide (matching-identifiers-out
+          #rx"^BQN"
+          (combine-out (all-defined-out)
+                       (all-from-out "arithmetic.rkt" "1-modifiers.rkt" "2-modifiers.rkt" "system-values.rkt"))))
 
 (define ((BQN⊣ [undo 0]) x [w #f])
   (if w w x))
@@ -147,12 +150,6 @@
      (array-slice-ref x (pad-slices (array->list (array-map array->list w))))]
     [(array-all-and (array-map integer? w))
      (array-slice-ref x (list (array->list w) ::...))]))
-
-(define/match ((BQN⊑ [undo 0]) . args)
-  [(1 _) (undo-error #\⊑)]
-  [(0 (list x)) (array-ref x (make-vector (array-dims x) 0))]
-  [(0 (list x w)) (array-indexes-ref
-                    x (array-map (λ (n) (if (array? n) (array->vector n) n)) w))])
 
 (define (unique x)
   (remove-duplicates (array->list x)))
