@@ -4,7 +4,7 @@
 (define (read-syntax path port)
   (define parse-tree (parse path (bqn-tokenizer port path)))
   (strip-bindings
-   #`(module bqn-mod BQN/expander
+   #`(module bqn-mod BQN/expander/expander
        #,parse-tree)
    )
   )

@@ -1,5 +1,5 @@
 #lang br
-(require "blocks.rkt"  "primitives/primitives.rkt")
+(require "blocks.rkt"  "../primitives/primitives.rkt")
 (provide (all-defined-out))
 
 (define-macro-cases select-ids

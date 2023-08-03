@@ -2,7 +2,7 @@
 (require
   "assign.rkt" "blocks.rkt"
   racket/stxparam math/array br/macro 
-  "primitives/primitives.rkt")
+  "../primitives/primitives.rkt")
 
 (define-macro-cases Derv
   [(Derv F) #'F]
@@ -86,5 +86,5 @@
 (provide
  #%top #%datum #%top-interaction
  (all-defined-out)
- (all-from-out "assign.rkt" "blocks.rkt" "primitives/primitives.rkt")
+ (all-from-out "assign.rkt" "blocks.rkt" "../primitives/primitives.rkt")
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))
