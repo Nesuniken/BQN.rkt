@@ -1,30 +1,6 @@
 #lang br
-(require "blocks.rkt"  "../primitives/primitives.rkt")
+(require "blocks.rkt" "lhs.rkt"  "../primitives/primitives.rkt")
 (provide (all-defined-out))
-
-(define-macro-cases select-ids
-  [(select-ids PATH (IDS ...) (_ ANY) REST ...)
-   #'(select-ids PATH (IDS ...) ANY REST ...)]
-  
-  [(select-ids PATH (IDS ...) NAME REST ...)
-   #'(select-ids PATH (NAME IDS ...) REST ...)]
-  [(select-ids PATH (IDS ...) (lhs-entry BIND-ID ORIG-ID) REST ...)
-   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) REST ...)]
-
-  [(select-ids PATH (IDS ...))
-   #'(require (only-in PATH IDS ...))]
-  )
-
-(define-macro-cases import
-  [(import (IDS ...) ⇐ (bqn-req PATH))
-   #'(begin
-       (import (IDS ...) ← (bqn-req PATH))
-       (all-from-out PATH)
-       )]
-  [(import (IDS ...) ← (bqn-req PATH))
-   #'(select-ids PATH () IDS ...)]
-  [(import PATH)  #'(require PATH)]
-  )
 
 (define-macro (FuncExpr EXPR)
   #'EXPR)
@@ -52,9 +28,23 @@
       ([((EXPORTS ...) (NAMES ...) (VALUES ...) RESULT) (extract-defs #'EXPR)])
     #'(begin
         EXPORTS ...
-        (define NAMES VALUES) ...
+        (make-defs (NAMES ...) (VALUES ...))
         RESULT
         )))
+
+(define-macro-cases make-defs
+  [(make-defs (· DEF-REST ...) (VALUE VAL-REST ...))
+   #'(make-defs (DEF-REST ...) (VAL-REST ...))]
+  [(make-defs ((PATTERN) DEF-REST ...) (VALUE VAL-REST ...))
+   #'(begin
+       (match-define PATTERN VALUE)
+       (make-defs (DEF-REST ...) (VAL-REST ...)))]
+  [(make-defs (NAME DEF-REST ...) (VALUE VAL-REST ...))
+   #'(begin
+       (define NAME VALUE)
+       (make-defs (DEF-REST ...) (VAL-REST ...)))]
+  [(make-defs () ())
+   #'(begin)])
 
 (begin-for-syntax
   (require racket/list racket/match br/list)

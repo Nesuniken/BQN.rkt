@@ -1,6 +1,6 @@
 #lang racket
 (require
-  "assign.rkt" "blocks.rkt"
+  "assign.rkt" "blocks.rkt" "lhs.rkt"
   racket/stxparam math/array br/macro 
   "../primitives/primitives.rkt")
 
@@ -15,7 +15,7 @@
 (define-macro-cases Train
   [(Train   T) #'T]
 
-  [(Train nothing T R)
+  [(Train · T R)
    #'(BQN∘ T R)]
   
   [(Train   T R)
@@ -28,7 +28,7 @@
   )
 
 (define-macro-cases arg
-  [(arg nothing F X) #'((F) X)]
+  [(arg · F X) #'((F) X)]
   [(arg   F X) #'((F) X)]
   [(arg W F X) #'((F) X W)]
   )
@@ -86,5 +86,5 @@
 (provide
  #%top #%datum #%top-interaction
  (all-defined-out)
- (all-from-out "assign.rkt" "blocks.rkt" "../primitives/primitives.rkt")
+ (all-from-out math/array "lhs.rkt" "assign.rkt" "blocks.rkt" "../primitives/primitives.rkt")
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

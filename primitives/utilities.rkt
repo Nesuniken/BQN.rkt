@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/function racket/match math/array)
+(require racket/function racket/match racket/class racket/format math/array)
 (provide (all-defined-out))
 
 (define-syntax-rule (swap f) (λ (x w) (f w x)))
@@ -10,7 +10,7 @@
   [(0 (list x w)) (array-indexes-ref
                     x (array-map (λ (n) (if (array? n) (array->vector n) n)) w))])
 
-(define (undo-error name) (error name "isn't invertable"))
+(define (undo-error name) (error "could not invert" name ))
 
 (define (find-fill x)
   (cond

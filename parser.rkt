@@ -12,7 +12,7 @@ program : [line] (/"⋄" [line])*
 @line   : stmt | import
 import  : [lhsComp def] bqn-req
 stmt    : expr
-@expr    : subExpr
+@expr   : subExpr
         | FuncExpr
         | 1M-Expr
         | 2M-Expr
@@ -49,19 +49,20 @@ FuncExpr : Train | FUNC-CUSTOM assign FuncExpr
 
 arg         : [subject | nothing] Derv subExpr 
 nothing     : [subject | nothing] Derv nothing | NOTHING
-subExpr     : subject | arg | SUB-CUSTOM assign subExpr | SUB-CUSTOM Derv "↩" [subExpr]
+subExpr     :  subject | arg | lhs assign subExpr | lhs Derv "↩" [subExpr]
 
 @name     : 2MOD-CUSTOM | 1MOD-CUSTOM | FUNC-CUSTOM | SUB-CUSTOM
-@lhs-sub  : NOTHING | lhsList | lhsArray
+@lhs-sub  : NOTHING | lhsList | lhsNS | lhsArray
 @lhs-any  : name | lhs-sub | /"(" lhs-elt /")"
-lhs-atom  : lhs-any | /"(" lhsStrand /")"
-lhs-elt   : lhs-any | lhsStrand
-lhs-entry : @lhs-elt | lhs /"⇐" name
+@lhs-atom  : lhs-any | /"(" lhsStrand /")"
+@lhs-elt   : lhs-any | lhsStrand
+/lhs-entry : @lhs-elt | lhs /"⇐" name
 lhsStrand : lhs-atom (/"‿" lhs-atom)+
-lhsList   : /"⟨" /["⋄"] [(lhs-entry /"⋄")* lhs-entry /["⋄"]] /"⟩"
+lhsNS     : /"⟨" /["⋄"] [(lhs-entry /"⋄")* lhs-entry /["⋄"]] /"⟩"
+lhsList   : /"⟨" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"⟩"
 lhsArray  : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
-@lhsComp  : lhs-sub | lhsStrand
-/lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
+/lhsComp  : lhs-sub | lhsStrand
+@lhs      : SUB-CUSTOM | lhsComp | /"(" lhs /")"
 
 body : /"{" /["⋄"] (line /"⋄")* line /["⋄"]
 

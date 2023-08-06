@@ -112,7 +112,7 @@
 
      [#\@ (token 'CHARACTER #\null)]
 
-     [nothing-dot (token 'NOTHING)]
+     [nothing-dot (token 'NOTHING '·)]
 
      [#\. (token ".")]
      
