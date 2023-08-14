@@ -1,6 +1,6 @@
 #lang racket
 (require
-  "assign.rkt" "blocks.rkt" "lhs.rkt"
+  "assign.rkt" "blocks.rkt" "../lhs.rkt"
   racket/stxparam math/array br/macro 
   "../primitives/primitives.rkt")
 
@@ -28,9 +28,9 @@
   )
 
 (define-macro-cases arg
-  [(arg · F X) #'((F) X)]
-  [(arg   F X) #'((F) X)]
-  [(arg W F X) #'((F) X W)]
+  [(arg · F X) #'(F X)]
+  [(arg   F X) #'(F X)]
+  [(arg W F X) #'(F X W)]
   )
 
 (define-macro a-list  #'strand)
@@ -86,5 +86,5 @@
 (provide
  #%top #%datum #%top-interaction
  (all-defined-out)
- (all-from-out math/array "lhs.rkt" "assign.rkt" "blocks.rkt" "../primitives/primitives.rkt")
+ (all-from-out math/array "../lhs.rkt" "assign.rkt" "blocks.rkt" "../primitives/primitives.rkt")
  (rename-out [bqn-module #%module-begin] [bqn-app #%app]))

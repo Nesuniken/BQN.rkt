@@ -49,3 +49,9 @@
   [(f  #f (list x w))
    ((pv-dyad f) x w)]
   )
+
+(struct bqn-func (call undo ~undo)
+  #:property prop:procedure 0)
+
+(define undo bqn-func-undo)
+(define ~undo bqn-func-~undo)

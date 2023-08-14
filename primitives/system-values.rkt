@@ -1,6 +1,6 @@
 #lang racket
-(require racket/trace math/array racket/provide br/macro)
-(provide (matching-identifiers-out #rx"•" (all-defined-out)))
+(require racket/trace math/array racket/provide)
+(provide (all-defined-out))
 (define (•promote x)
   (if (array? x) x (array x)))
 

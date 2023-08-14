@@ -1,5 +1,5 @@
 #lang br
-(require "blocks.rkt" "lhs.rkt"  "../primitives/primitives.rkt")
+(require "blocks.rkt" "../lhs.rkt"  "../primitives/primitives.rkt")
 (provide (all-defined-out))
 
 (define-macro (FuncExpr EXPR)
@@ -13,7 +13,7 @@
 
 (define-macro-cases subExpr
   [(subExpr NAME ↩ VALUE)
-   #'(get-expr (NAME ↩ (•strict VALUE)))]
+   #'(set! NAME (•strict VALUE))]
   [(subExpr NAME FUNC ↩)
    #'(subExpr NAME ↩ (FUNC NAME))]
   [(subExpr NAME FUNC ↩ ARG)
@@ -22,6 +22,29 @@
    #'VALUE]
   [(subExpr VALUE)
    #'VALUE])
+
+(define-macro-cases select-ids
+  [(select-ids PATH (IDS ...) (_ ANY) REST ...)
+   #'(select-ids PATH (IDS ...) ANY REST ...)]
+  
+  [(select-ids PATH (IDS ...) NAME REST ...)
+   #'(select-ids PATH (NAME IDS ...) REST ...)]
+  [(select-ids PATH (IDS ...) (BIND-ID ORIG-ID) REST ...)
+   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) REST ...)]
+
+  [(select-ids PATH (IDS ...))
+   #'(require (only-in PATH IDS ...))]
+  )
+
+(define-macro-cases import
+  [(import (IDS ...) ⇐ (bqn-req PATH))
+   #'(begin
+       (import (IDS ...) ← (bqn-req PATH))
+       (provide (all-from-out PATH)))]
+  [(import (IDS ...) ← (bqn-req PATH))
+   #'(select-ids PATH () IDS ...)]
+  [(import PATH)  #'(require PATH)]
+  )
 
 (define-macro (stmt EXPR)
   (with-pattern
@@ -33,7 +56,7 @@
         )))
 
 (define-macro-cases make-defs
-  [(make-defs (· DEF-REST ...) (VALUE VAL-REST ...))
+  [(make-defs ((·) DEF-REST ...) (_ VAL-REST ...))
    #'(make-defs (DEF-REST ...) (VAL-REST ...))]
   [(make-defs ((PATTERN) DEF-REST ...) (VALUE VAL-REST ...))
    #'(begin
@@ -44,12 +67,15 @@
        (define NAME VALUE)
        (make-defs (DEF-REST ...) (VAL-REST ...)))]
   [(make-defs () ())
-   #'(begin)])
+   #'(void)])
 
 (begin-for-syntax
   (require racket/list racket/match br/list)
   (define (find-defs stx)
-    (match (syntax-e stx)         
+    (match (syntax-e stx)
+      [(list _ name (app syntax-e '⇐) value)
+       (values name empty empty empty)]
+      
       [(list _ name (app syntax-e (and (or '⇐ '←) sign)) value)
        (let*-values
            ([(exports defs vals expr)

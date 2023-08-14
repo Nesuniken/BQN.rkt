@@ -2,18 +2,17 @@
 (require racket/stxparam br/macro)
 (provide (all-defined-out))
 
-(define-syntax-parameter 𝕣
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕘
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕗
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕤
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕨
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
-(define-syntax-parameter 𝕩
-  (λ (stx) (raise-syntax-error #f "Special characters aren't permitted outside of a block" stx)))
+(begin-for-syntax
+  (define (special-error stx)
+    (raise-syntax-error
+     #f "Special characters aren't permitted outside of a block" stx)))
+
+(define-syntax-parameter 𝕣 special-error)
+(define-syntax-parameter 𝕘 special-error)
+(define-syntax-parameter 𝕗 special-error)
+(define-syntax-parameter 𝕤 special-error)
+(define-syntax-parameter 𝕨 special-error)
+(define-syntax-parameter 𝕩 special-error)
 
 (define-macro subBlock #'body)
 
@@ -23,9 +22,8 @@
    #'((thunk STMTS ...))])
 
 (define (make-func-block monad dyad)
-  (lambda (x [w (void)] #:undo? [undo? #f])
+  (lambda (x [w (void)])
     (cond
-      [undo?     (error "Block functions are not invertable")]
       [(void? w) (monad x)]
       [(dyad x w)])))
 
@@ -38,13 +36,13 @@
                      ([𝕤 (make-rename-transformer #'S)]
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'void)])
-                   STMTS ...))
+                   (STMTS ...)))
                (lambda (X W)
                  (syntax-parameterize
                      ([𝕤 (make-rename-transformer #'S)]
                       [𝕩 (make-rename-transformer #'X)]
                       [𝕨 (make-rename-transformer #'W)])
-                   STMTS ...)))])
+                   (STMTS ...))))])
         S)))
 
 (define-macro-cases 1M-block
@@ -55,7 +53,7 @@
                  (syntax-parameterize
                      ([𝕣 (make-rename-transformer #'R)]
                       [𝕗 (make-rename-transformer #'F)])
-                   STMTS ...))])
+                   (STMTS ...)))])
          R))]
   [(1M-block (STMTS ...) 𝕊)
    #'(1M-block (FuncBlock STMTS ...) 𝕤)])

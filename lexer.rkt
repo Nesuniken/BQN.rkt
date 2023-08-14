@@ -58,7 +58,7 @@
          (cons
           (lcm current-block role)
           outer-blocks))])
-    (token (if (string-contains? "𝕎𝕊𝕏𝔽𝔾" lexeme) 'FUNC-LITERAL 'SUB-LITERAL) special-downcase))
+    (token lexeme special-downcase))
 
   (define num-lexer
     (lexer-srcloc
@@ -136,7 +136,14 @@
       (begin
         (set-box! stack
           (cons 1 (unbox stack)))
-        lexeme)]   
+        lexeme)]
+     [#\:
+      (match (unbox stack)
+        ['() (error "Colon found outside block")]
+        [(list* current-block outer-blocks)
+         (begin
+           (set-box! stack (cons 0 outer-blocks))
+           lexeme)])]
 
      [(lx/: (lx/? #\_) #\𝕣 (lx/? #\_))
       (begin
@@ -145,10 +152,10 @@
           [(list* _ (or "𝕘" "𝔾") _) empty]
           [(list* "_𝕣_" current-block outer-blocks)
            (set-box! stack
-             (cons (lcm current-block 9) rest))]
+             (cons (lcm current-block 9) outer-blocks))]
           [(list* _ current-block outer-blocks)
            (set-box! stack
-             (cons (lcm current-block 3) rest))])
+             (cons (lcm current-block 3) outer-blocks))])
         (token lexeme '𝕣))]
 
      [(lx/or special-sub special-func) (add-special! lexeme)]
@@ -161,6 +168,7 @@
            (set-box! stack outer-blocks)
 
            (case current-block
+             [(0)  lexeme]
              [(1)  (token 'SUB-BLOCK)]
              [(2)  (token 'FUNC-BLOCK)]
              [(3)  (token '1M-IMMEDIATE '𝕤)]
@@ -192,7 +200,7 @@
      [rkt-sub
       (token 'SUB-CUSTOM (string->symbol (trim-rkt lexeme)))]
 
-     [(lx/or brackets assign #\‿)
+     [(lx/or brackets assign #\‿ #\;)
       (token lexeme (string->symbol lexeme))]
      ))
   
