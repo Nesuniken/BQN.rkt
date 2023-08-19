@@ -80,7 +80,7 @@
 (define (BQN˝ F)
   (lambda (x w)
     (for/fold ([fold w]) ([cell (in-array-axis x)])
-      ((F) fold cell))))
+      (F fold cell))))
 
 (define (BQN\` F)
   (lambda (x [w #f])
