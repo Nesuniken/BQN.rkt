@@ -1,5 +1,5 @@
-#lang racket
-(require racket/stxparam br/macro)
+#lang br
+(require racket/stxparam)
 (provide (all-defined-out))
 
 (begin-for-syntax
@@ -27,23 +27,69 @@
       [(void? w) (monad x)]
       [(dyad x w)])))
 
-(define-macro (FuncBlock STMTS ...)
-  (with-syntax ([(S X W) (generate-temporaries '(𝕤 𝕩 𝕨))])
+(define-macro (headless-func STMTS ...)
+  (with-syntax ([S (datum->syntax caller-stx '𝕤)]
+                [X (datum->syntax caller-stx '𝕩)]
+                [W (generate-temporary '𝕨)])
     #'(letrec
           ([S (make-func-block
                (lambda (X)
                  (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)]
-                      [𝕨 (make-rename-transformer #'void)])
+                     ([𝕨 (make-rename-transformer #'void)])
                    (STMTS ...)))
                (lambda (X W)
                  (syntax-parameterize
-                     ([𝕤 (make-rename-transformer #'S)]
-                      [𝕩 (make-rename-transformer #'X)]
-                      [𝕨 (make-rename-transformer #'W)])
+                     ([𝕨 (make-rename-transformer #'W)])
                    (STMTS ...))))])
         S)))
+
+(begin-for-syntax
+  (require racket/list racket/match)
+  (define (parse-infers first-stx . rest-stx)
+    (define (add-infer key)
+     (define infer-dict
+      (if (empty? rest-stx)
+          #hash(((#\˜ #\⁼) . ())
+                ((    #\⁼) . ())
+                (()        . ()))
+          (parse-infers rest-stx)))
+      (hash-update infer-dict key (λ (l) (cons first-stx l)))
+      )
+    (define modifiers
+      (pattern-case first-stx
+        [((headW _) _ MODS ...) #'(MODS ...)]
+        [(_ MODS ...) #'(MODS ...)]))
+    (pattern-case modifiers
+      [((swap-undo) _ ...) (add-infer '(#\˜ #\⁼))]
+      [((undo)      _ ...) (add-infer '(#\⁼))]
+      [((no-mod)    _ ...) (add-infer '())]
+      )
+    )
+  
+  (define (func-head-block bodies)
+    (match-define
+      (hash-table
+       ((list #\˜ #\⁼) ~undo)
+       ((list #\⁼)      undo)
+       ('()             call))
+      (apply parse-infers (syntax-e bodies)))
+    (datum->syntax
+     bodies
+     `(bqn-func
+       (block->lambda  call)
+       (block->lambda  undo)
+       (block->lambda ~undo))
+     )
+    )
+  )
+
+(define-macro-cases FuncBlock
+  [(FuncBlock (body STMTS ...))
+   #'(headless-func STMTS ...)]
+;  [(FuncBlock BODIES ...)]
+  )
+
+(define-macro block->lambda)
 
 (define-macro-cases 1M-block
   [(1M-block (STMTS ...) 𝕤)

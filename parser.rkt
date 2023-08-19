@@ -65,40 +65,46 @@ lhsComp    : lhs-sub | lhsStrand
 /lhs-comp  : lhsComp
 @lhs       : SUB-CUSTOM | lhs-comp | /"(" lhs /")"
 
-headW    : lhs | "𝕨"
+headW   : lhs | "𝕨"
 headX    : lhs | "𝕩"
 HeadF    : lhs | FUNC-CUSTOM | "𝕗" | "𝔽"
 HeadG    : lhs | FUNC-CUSTOM | "𝕘" | "𝔾"
 FuncLab  : FUNC-CUSTOM | "𝕊"
 1ModLab  : 1MOD-CUSTOM | "_𝕣"
 2ModLab  : 2MOD-CUSTOM | "_𝕣_"
-1ModImm : 1ModLab | HeadF 1ModLab
-2ModImm : 2ModLab | HeadF 2ModLab HeadG
+1ModImm  : 1ModLab | HeadF 1ModLab
+2ModImm  : 2ModLab | HeadF 2ModLab HeadG
 
-FuncHead :         FuncLab [["˜"] "⁼"] 
-         | [headW] FuncLab       ["⁼"] headX
-         |  headW  FuncLab   "˜"  "⁼"  headX
-         | lhsComp
+no-mod      : /""
+undo        : /"⁼"
+@maybe-undo : no-mod | undo 
+swap-undo   : /"˜"  /"⁼" 
+
+FuncHead  :         FuncLab (maybe-undo | swap-undo) 
+          | [headW] FuncLab maybe-undo headX
+          |  headW  FuncLab swap-undo  headX
+          | lhsComp
 
 1ModDelay :         1ModLab
-         | [headW] 1ModImm      ["⁼"] headX
-         |  headW  1ModImm  "˜"  "⁼"  headX
+          | [headW] 1ModImm maybe-undo headX
+          |  headW  1ModImm swap-undo  headX
 
 2ModDelay :         2ModLab
-         | [headW] 2ModImm      ["⁼"] headX
-         |  headW  2ModImm  "˜"  "⁼"  headX
+          | [headW] 2ModImm maybe-undo headX
+          |  headW  2ModImm swap-undo  headX
+
 
 body : /["⋄"] (stmt /"⋄")* stmt /["⋄"]
 
-FuncBody : /["⋄"] FuncHead /["⋄"] /":" body
+FuncBody  : /["⋄"] FuncHead /["⋄"] /":" body
 FuncBlock : /"{" FuncBody (/";" FuncBody)* [/";" body] /"}"
           | /"{" body /FUNC-BLOCK
 
-1ModBody : /["⋄"] (1ModImm | 1ModDelay) /["⋄"] /":" body
+1ModBody  : /["⋄"] (1ModImm | 1ModDelay) /["⋄"] /":" body
 1M-block  : /"{" 1ModBody (/";" 1ModBody)* [/";" body] /"}"
           | /"{" body  (1M-IMMEDIATE | 1M-DELAYED)
 
-2ModBody : /["⋄"] (2ModImm | 2ModDelay) /["⋄"] /":" body
+2ModBody  : /["⋄"] (2ModImm | 2ModDelay) /["⋄"] /":" body
 2M-block  : /"{" 2ModBody (/";" 2ModBody)* [/";" body] /"}"
           | /"{" body  (2M-IMMEDIATE | 2M-DELAYED)
 
@@ -112,9 +118,9 @@ subBlock  : /"{" /["⋄"] SUB-CUSTOM /["⋄"] /":" body [/";" body] /"}"
 @func-literal : FUNC-LITERAL
               | "𝕎" | "𝕊" | "𝕏" | "𝔽" | "𝔾"
 
-@sub-literal : SUB-LITERAL | special-sub
-             | CHARACTER | STRING | RKT-STRING
-             | INTEGER | REAL | NUMBER | real | number
+@sub-literal  : SUB-LITERAL | special-sub
+              | CHARACTER | STRING | RKT-STRING
+              | INTEGER | REAL | NUMBER | real | number
 
 @special-sub : "𝕨" | "𝕤" | "𝕩" | "𝕗" | "𝕣" | "𝕘"
 

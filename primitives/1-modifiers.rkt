@@ -3,7 +3,7 @@
           racket/function racket/vector racket/list
           math/array "utilities.rkt")
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
-;
+
 (define (BQN⁼ F)
   (if (bqn-func? F)
       (match-let ([(bqn-func call inverse _) F])
