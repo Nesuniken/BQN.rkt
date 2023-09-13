@@ -13,7 +13,7 @@
 (define/match (left-tack-undo . args)
   [((or (list x) (list x x))) x])
 
-(define BQN⊣ (bqn-func left-tack-undo left-tack-undo))
+(define BQN⊣ (bqn-func left-tack left-tack-undo left-tack-undo))
 
 (define (right-tack x [w #f]) x)
 
@@ -39,7 +39,7 @@
            [(var-dim-val)
             (/ (array-size flat-x) dim-prod)]
            [(make-dims)
-            (λ (deshaped* v-d-v)
+            (λ (v-d-v)
               (list->vector (append left-dims (list v-d-v) right-dims)))])
         (case var-dim
           [(BQN∘)

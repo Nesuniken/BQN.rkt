@@ -219,7 +219,7 @@
 (define (pow~undo x w)
   ((pv-dyad (λ (x* w*) (expt x* (/ w*))))))
 
-(define BQN⋆ (bqn-func pow #f pow~undo))
+(define BQN⋆ (bqn-func pow (thunk (undo-error #\⋆)) pow~undo))
 
 (define BQN\|
   (case-lambda

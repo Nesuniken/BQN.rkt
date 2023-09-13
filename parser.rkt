@@ -10,7 +10,7 @@
 
 program : [line] (/"⋄" [line])*
 @line   : stmt | import
-import  : [lhs-comp def] bqn-req
+import  : [lhsComp def] bqn-req
 stmt    : expr ;| [lhs-elt] "⇐"
 @expr   : subExpr
         | FuncExpr
@@ -56,57 +56,75 @@ subExpr  :  subject | arg | lhs assign subExpr | lhs Derv "↩" [subExpr]
 @lhs-any   : name | lhs-sub | /"(" lhs-elt /")"
 @lhs-atom  : lhs-any | /"(" lhsStrand /")"
 @lhs-elt   : lhs-any | lhsStrand
-/lhs-entry : @lhs-elt | lhs /"⇐" name
+/lhs-entry : lhs-elt | lhs /"⇐" name
 lhsStrand  : lhs-atom (/"‿" lhs-atom)+
 lhsNS      : /"⟨" /["⋄"] [(lhs-entry /"⋄")* lhs-entry /["⋄"]] /"⟩"
 lhsList    : /"⟨" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"⟩"
 lhsArray   : /"[" /["⋄"] [(lhs-elt   /"⋄")* lhs-elt   /["⋄"]] /"]"
-lhsComp    : lhs-sub | lhsStrand
-/lhs-comp  : lhsComp
-@lhs       : SUB-CUSTOM | lhs-comp | /"(" lhs /")"
+@lhsComp   : lhs-sub | lhsStrand
+@lhs       : SUB-CUSTOM | lhsComp | /"(" lhs /")"
 
-headW   : lhs | "𝕨"
-headX    : lhs | "𝕩"
-HeadF    : lhs | FUNC-CUSTOM | "𝕗" | "𝔽"
-HeadG    : lhs | FUNC-CUSTOM | "𝕘" | "𝔾"
-FuncLab  : FUNC-CUSTOM | "𝕊"
-1ModLab  : 1MOD-CUSTOM | "_𝕣"
-2ModLab  : 2MOD-CUSTOM | "_𝕣_"
-1ModImm  : 1ModLab | HeadF 1ModLab
-2ModImm  : 2ModLab | HeadF 2ModLab HeadG
+@headW  : lhs | "𝕨"
+headX   : lhs | "𝕩"
+HeadF   : lhs | FUNC-CUSTOM | "𝕗" | "𝔽"
+HeadG   : lhs | FUNC-CUSTOM | "𝕘" | "𝔾"
+FuncLab : FUNC-CUSTOM | "𝕊"
+1ModLab : 1MOD-CUSTOM | "_𝕣"
+2ModLab : 2MOD-CUSTOM | "_𝕣_"
+/1ModImmHead : 1ModLab | HeadF 1ModLab
+/2ModImmHead : 2ModLab | HeadF 2ModLab HeadG
 
-no-mod      : /""
+no-mod      : ()
 undo        : /"⁼"
 @maybe-undo : no-mod | undo 
 swap-undo   : /"˜"  /"⁼" 
 
-FuncHead  :         FuncLab (maybe-undo | swap-undo) 
+/FuncHead :         FuncLab (maybe-undo | swap-undo) 
           | [headW] FuncLab maybe-undo headX
           |  headW  FuncLab swap-undo  headX
           | lhsComp
 
-1ModDelay :         1ModLab
-          | [headW] 1ModImm maybe-undo headX
-          |  headW  1ModImm swap-undo  headX
+1ModDelayHead :         1ModImmHead
+              | [headW] 1ModImmHead maybe-undo headX
+              |  headW  1ModImmHead swap-undo  headX
 
-2ModDelay :         2ModLab
-          | [headW] 2ModImm maybe-undo headX
-          |  headW  2ModImm swap-undo  headX
+2ModDelayHead :         1ModImmHead
+              | [headW] 2ModImmHead maybe-undo headX
+              |  headW  2ModImmHead swap-undo  headX
 
-
+else-head : ()
 body : /["⋄"] (stmt /"⋄")* stmt /["⋄"]
 
-FuncBody  : /["⋄"] FuncHead /["⋄"] /":" body
-FuncBlock : /"{" FuncBody (/";" FuncBody)* [/";" body] /"}"
+/FuncBody : /["⋄"] FuncHead /["⋄"] /":" body
+/FuncElse : /";" else-head body
+FuncBlock : /"{" FuncBody (/";" FuncBody)* [FuncElse] /"}"
           | /"{" body /FUNC-BLOCK
 
-1ModBody  : /["⋄"] (1ModImm | 1ModDelay) /["⋄"] /":" body
-1M-block  : /"{" 1ModBody (/";" 1ModBody)* [/";" body] /"}"
-          | /"{" body  (1M-IMMEDIATE | 1M-DELAYED)
 
-2ModBody  : /["⋄"] (2ModImm | 2ModDelay) /["⋄"] /":" body
-2M-block  : /"{" 2ModBody (/";" 2ModBody)* [/";" body] /"}"
-          | /"{" body  (2M-IMMEDIATE | 2M-DELAYED)
+1ModElse     : /";" else-head body
+
+/1M-Imm-Body : /["⋄"] 1ModImmHead /["⋄"] /":" body
+1M-Imm-Block : /"{" 1M-Imm-Body (/";" 1M-Imm-Body)* [1ModElse] /"}"
+             | /"{" body /1M-IMMEDIATE
+
+1M-Del-Body  : /["⋄"] 1ModDelayHead /["⋄"] /":" body
+1M-Del-Block : /"{" 1M-Del-Body (/";" 1M-Del-Body)* [1ModElse] /"}"
+             | /"{" body /1M-DELAYED
+
+@1M-block : 1M-Imm-Block | 1M-Del-Block
+
+
+2ModElse     : /";" else-head body
+
+/2M-Imm-Body  : /["⋄"] 2ModImmHead /["⋄"] /":" body
+2M-Imm-Block : /"{" 2M-Imm-Body (/";" 2M-Imm-Body)* [2ModElse] /"}"
+             | /"{" body /2M-IMMEDIATE
+
+2M-Del-Body  : /["⋄"] 2ModDelayHead /["⋄"] /":" body
+2M-Del-Block : /"{" 2M-Del-Body (/";" 2M-Del-Body)* [2ModElse] /"}"
+             | /"{" body /2M-DELAYED
+
+@2M-block : 2M-Imm-Block | 2M-Del-Block
 
 subBlock  : /"{" /["⋄"] SUB-CUSTOM /["⋄"] /":" body [/";" body] /"}"
           | /"{" body /SUB-BLOCK
@@ -123,6 +141,5 @@ subBlock  : /"{" /["⋄"] SUB-CUSTOM /["⋄"] /":" body [/";" body] /"}"
               | INTEGER | REAL | NUMBER | real | number
 
 @special-sub : "𝕨" | "𝕤" | "𝕩" | "𝕗" | "𝕣" | "𝕘"
-
 number : real /"i" real
 real   : REAL | ["¯"] ("∞" | "π" [/"e" INTEGER])

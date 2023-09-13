@@ -23,18 +23,14 @@
   [(subExpr VALUE)
    #'VALUE])
 
-(define-macro-cases select-ids
-  [(select-ids PATH (IDS ...) (_ ANY) REST ...)
-   #'(select-ids PATH (IDS ...) ANY REST ...)]
-  
-  [(select-ids PATH (IDS ...) NAME REST ...)
-   #'(select-ids PATH (NAME IDS ...) REST ...)]
-  [(select-ids PATH (IDS ...) (BIND-ID ORIG-ID) REST ...)
-   #'(select-ids PATH ([ORIG-ID BIND-ID] IDS ...) REST ...)]
-
-  [(select-ids PATH (IDS ...))
-   #'(require (only-in PATH IDS ...))]
-  )
+(define-macro (select-ids PATH IDS)
+  (with-pattern
+      ([(BINDS ...)
+        (pattern-case-filter #'IDS
+          [(BIND-ID ORIG-ID) #'(ORIG-ID BIND-ID)]
+          [NAME #'NAME])])
+    #'(require (only-in PATH BINDS ...))
+    ))
 
 (define-macro-cases import
   [(import (IDS ...) ⇐ (bqn-req PATH))
