@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/class racket/format br/syntax "lexer.rkt" "parser.rkt")
+(require racket/class racket/format br/syntax brag/support "lexer.rkt" "lex-utils.rkt" "parser.rkt")
 
 (define (read-syntax path port)
   (define parse-tree (parse path (bqn-tokenizer port path)))
@@ -67,10 +67,11 @@
     (case key
       [(drracket:keystrokes)
        (for/list ([(in out) (in-hash keymap)])
-         (list
-          (~a "\\;" in)
-          (lambda (text event)
-            (let ([pos (send text get-start-position)])
-              (send text insert out)))))]
+         (list (~a "\\;" in)
+               (λ (txt evt) (send txt insert out)))
+         )]
+      [(drracket:submit-predicate)
+       (lambda (port at-end?)
+         (and at-end? (syntax-complete? port)))]
       [else default])))
 

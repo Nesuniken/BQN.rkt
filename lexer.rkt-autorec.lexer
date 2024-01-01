@@ -41,7 +41,7 @@
 
 (define (lex-debug string)
   (define lexer (new bqn-lexer-debugger%))
-  (apply-port-proc (λ(p) (send lexer lex p)) string)
+  (apply-port-proc lexer string)
   )
 
 (define bqn-lexer%
@@ -291,7 +291,7 @@
     (define (strip token)
       (define strip-srcloc (srcloc-token-token token))
 
-      (if (token-struct? strip-srcloc)
+      (if (struct? strip-srcloc)
           (token-struct-type strip-srcloc)
           strip-srcloc))
 

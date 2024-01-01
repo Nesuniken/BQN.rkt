@@ -1,8 +1,22 @@
 #lang racket/base
-(require math/array)
+(require math/array racket/function)
 (provide (all-defined-out))
 
-(define-syntax-rule (swap f) (λ (x w) (f w x)))
+(define (to-func x)
+  (if (procedure? x)
+      x
+      (const x)))
+
+(define (to-array x)
+  (if (array? x)
+      x
+      (array x)))
+
+(define ((apply-mod R) . FG)
+  (apply R (map to-func FG)))
+
+(define-syntax-rule (swap f)
+  (λ (x w) (f w x)))
 
 (define BQN⊑
   (case-lambda
@@ -34,6 +48,3 @@
 
 (struct bqn-func (call undo ~undo)
   #:property prop:procedure 0)
-
-(define  undo bqn-func-undo)
-(define ~undo bqn-func-~undo)

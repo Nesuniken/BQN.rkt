@@ -7,9 +7,11 @@
 (define (BQN⁼ F)
   (if (bqn-func? F)
       (match-let ([(bqn-func call inverse _) F])
-        (bqn-func inverse call (error "F⁼˜⁼ is undefined")))
-      (bqn-func (error "Inverse not found")
-                (error "F⁼˜⁼ is undefined")))
+        (bqn-func inverse call (thunk (error "F⁼˜⁼ is undefined"))))
+      (bqn-func
+       (thunk (error "Inverse not found"))
+       (to-func F)
+       (thunk (error "F⁼˜⁼ is undefined"))))
   )
   
 (define BQN˙ const)
@@ -36,13 +38,18 @@
 (define (BQN˜ F)
   (if (bqn-func? F)
       (full-tilde F)
-      (tilde F)))
+      ((apply-mod tilde) F)))
+
+(define (BQN˜⁼ F)
+  (BQN⁼ (BQN˜ F)))
 
 (define (BQN¨ F)
   (define (each f)
     (curry array-map f))
 
-  (bqn-func (each F) (each (undo F)) #f)
+  (bqn-func
+   ((apply-mod each) F)
+   (each (BQN⁼ F)) #f)
   )
 
 (define ((1-cells F) x)
@@ -59,7 +66,7 @@
        (F major-x major-w))]))
 
 (define (BQN˘ F)
-  (bqn-func (cells F) (cells (undo F)) #f))
+  (bqn-func ((apply-mod cells) F) (cells (BQN⁼ F)) #f))
 
 (define (table F)
   (case-lambda
@@ -70,25 +77,27 @@
        (F xn wn))]))
 
 (define (BQN⌜ F)
-  (bqn-func (table F) (1-cells (undo F)) #f))
+  (bqn-func ((apply-mod table) F) (1-cells (BQN⁼ F)) #f))
 
 (define (BQN´ F)
   (case-lambda
-    [(x  ) (array-all-fold x (F))]
-    [(x w) (array-all-fold x (F) w)]))
+    [(x  ) (array-all-fold x (apply-mod F))]
+    [(x w) (array-all-fold x (apply-mod F) w)]))
 
 (define (BQN˝ F)
   (lambda (x w)
     (for/fold ([fold w]) ([cell (in-array-axis x)])
-      (F fold cell))))
+      ((apply-mod F) fold cell))))
 
 (define (BQN\` F)
-  (lambda (x [w #f])
+  (lambda (x [w (void)])
     (for/lists (scan #:result (list->array scan)) 
                ([cell (in-array-axis x)])
       (cond
-        [(cons? scan) (F (first scan) cell)]
-        [(w) (F w cell)]
+        [(cons? scan)
+         ((apply-mod F) (first scan) cell)]
+        [((not (void? w)))
+         ((apply-mod F) w cell)]
         [cell])))
   )
 

@@ -1,58 +1,58 @@
 #lang racket/base
-(require math/array racket/undefined racket/provide racket/list racket/match "utilities.rkt"
-         (only-in "1-modifiers.rkt" BQN⁼ BQN˜))
+(require math/array racket/function racket/provide racket/list racket/match "utilities.rkt"
+         (only-in "1-modifiers.rkt" BQN⁼ BQN˜ BQN˜⁼))
 (provide (matching-identifiers-out #rx"^BQN" (all-defined-out)))
 
 (define (BQN∘ F G)
-  (bqn-func (compose1 F G) (compose1 (undo G) (undo F)) #f))
+  (bqn-func ((apply-mod compose1) F G) (compose1 (BQN⁼ G) (BQN⁼ F)) #f))
 
 (define ((circle F G) . args)
-  (apply F (map G args)))
+  (apply F (map (apply-mod G) args)))
 
 (define (undo-circle F G)
   (case-lambda
-    [(x  ) ((undo G) ((undo F) x))]
-    [(x w) ((undo G) ((undo F) x (G w)))]))
+    [(x  ) ((BQN⁼ G) ((BQN⁼ F) x))]
+    [(x w) ((BQN⁼ G) ((BQN⁼ F) x ((apply-mod G) w)))]))
 
 (define (BQN○ F G)
-  (bqn-func circle undo-circle #f))
+  (bqn-func (circle F G) (undo-circle F G) #f))
 
 (define (mmap F G)
   (if (not (procedure? F))
-      (λ (x) (G x F))
+      (λ (x) ((to-func G) x F))
       (case-lambda
-        [(x  ) (G x (F x))]
-        [(x w) (G x (F w))])))
+        [(x  ) ((to-func G) x (F x))]
+        [(x w) ((to-func G) x (F w))])))
 
 (define (undo-mmap F G)
   (if (not (procedure? F))
-      (λ (x  ) ((undo G) x F))
-      (λ (x w) ((undo G) x (F w)))))
+      (λ (x  ) ((BQN⁼ G) x F))
+      (λ (x w) ((BQN⁼ G) x (F w)))))
 
 (define (BQN⊸ F G)
-  (bqn-func mmap undo-mmap #f))
+  (bqn-func (mmap F G) (undo-mmap F G) #f))
 
 (define (l-mmap F G)
   (if (not (procedure? G))
-      (λ (x) (F G x))
+      (λ (x) ((to-func F) G x))
       (case-lambda
-        [(x  ) (F (G x) x)]
-        [(x w) (F (G x) w)])))
+        [(x  ) ((to-func F) (G x) x)]
+        [(x w) ((to-func F) (G x) w)])))
 
 (define (undo-l-mmap F G)
   (if (not (procedure? G))
-      (λ (x  ) ((~undo F) x G))
-      (λ (x w) ((undo G) ((undo F) x w)))))
+      (λ (x  ) ((BQN˜⁼ F) x G))
+      (λ (x w) ((BQN⁼ G) ((BQN⁼ F) x w)))))
 
 (define (BQN⟜ F G)
-  (bqn-func l-mmap undo-l-mmap #f))
+  (bqn-func (l-mmap F G) (undo-l-mmap F G) #f))
 
 (define (BQN⊘ F G)
   (define (valences f g)
     (case-lambda
       [(x)   (f x)]
       [(x w) (g x w)]))
-  (bqn-func (valences F G) (valences (undo F) (undo G)) #f)
+  (bqn-func ((apply-mod valences) F G) (valences (BQN⁼ F) (BQN⁼ G)) #f)
   )
 
 (define (apply-choice choice)
@@ -63,11 +63,11 @@
         [(x w) (array-map (λ (G x w) (G x w)) choice (array x) (array w))])))
 
 (define (BQN◶ F g)
-  (compose1 apply-choice BQN⊑ F))
+  (compose1 apply-choice (curry BQN⊑ g) F))
 
 (define (BQN⎊ F G)
-  (with-handlers ([exn:fail? (λ (e) (λ args (apply G args)))])
-    (λ args (apply F args))))
+  (with-handlers ([exn:fail? (λ (e) (λ args (apply (to-func G) args)))])
+    (λ args (apply (to-func F) args))))
 
 
 (define/match ((repeat F g) . args)
@@ -84,7 +84,7 @@
                     (apply F r (rest args))))])
      (loop g (first args)))]
   [(_ (? negative?) _)
-   (apply (repeat (undo F) (- g)) args)])
+   (apply (repeat (BQN⁼ F) (- g)) args)])
 
 (define (BQN⍟ F G)
-  (bqn-func (repeat F G) (repeat (BQN⁼ F) G)))
+  (bqn-func (repeat F G) (repeat (BQN⁼ F) G) #f))

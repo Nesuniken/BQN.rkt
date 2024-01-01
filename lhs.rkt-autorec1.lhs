@@ -6,12 +6,6 @@
   (equal? 1 (array-dims a))
   )
 
-(define-match-expander lhsComp
-  (lambda (stx)
-    (with-pattern
-        ([(_ PATTERN) stx])
-      #'PATTERN)))
-
 (define-match-expander nothing->underscore
   (lambda (stx)
     (pattern-case stx 

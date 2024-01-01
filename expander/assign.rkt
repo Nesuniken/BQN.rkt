@@ -1,5 +1,5 @@
 #lang br
-(require "blocks.rkt" "../lhs.rkt"  "../primitives/primitives.rkt")
+(require racket/stxparam "blocks.rkt" "../lhs.rkt"  "../primitives/primitives.rkt")
 (provide (all-defined-out))
 
 (define-macro (FuncExpr EXPR)
@@ -44,11 +44,11 @@
 
 (define-macro (stmt EXPR)
   (with-pattern
-      ([((EXPORTS ...) (NAMES ...) (VALUES ...) RESULT) (extract-defs #'EXPR)])
+      ([((EXPORTS ...) (NAMES ...) (VALUES ...) (RESULT ...)) (extract-defs #'EXPR)])
     #'(begin
         EXPORTS ...
         (make-defs (NAMES ...) (VALUES ...))
-        RESULT
+        RESULT ...
         )))
 
 (define-macro-cases make-defs
@@ -67,56 +67,49 @@
 
 (begin-for-syntax
   (require racket/list racket/match br/list)
+  
   (define (find-defs stx)
-    (match (syntax-e stx)
-      [(list _ name (app syntax-e '⇐) value)
-       (values name empty empty empty)]
-      
-      [(list _ name (app syntax-e (and (or '⇐ '←) sign)) value)
+    (pattern-case stx
+      [(_ NAME (def SIGN) VALUE)
        (let*-values
            ([(exports defs vals expr)
-             (find-defs value)]
+             (find-defs #'VALUE)]
             [(export)
-             (if (equal? sign '⇐)
-                 (cons name exports)
-                 exports)])
-         (values
-          export
-          (cons name defs)
-          (cons expr vals)
-          expr))]
-                  
-      [(list* _ (app syntax-e (list* 'body _)) _)
+             (pattern-case #'SIGN
+               [⇐ (cons #'NAME exports)]
+               [← exports])])
+         (values export
+                 (cons #'NAME defs)
+                 (cons expr vals)
+                 expr))]
+      
+      [(_ (body _ ...))
        (values empty empty empty stx)]
-         
-      [(? cons? split-stx)
+      [(_ (_ (body _ ...)) _ ...)
+       (values empty empty empty stx)]
+
+      [(EXPR ...)
        (for/fold
         ([total-export '()]
          [total-defs   '()]
          [total-values '()]
          [total-expr   '()]
-         #:result (values
-                   total-export
-                   total-defs
-                   total-values
-                   (datum->syntax stx total-expr stx)
-                   ))
-        ([stmt (in-list (reverse split-stx))])
+         #:result
+         (values total-export total-defs total-values
+                 (datum->syntax stx total-expr stx)))
+        ([stmt (in-list (reverse (syntax-e #'(EXPR ...))))])
          (let-values
-             ([(export defs vals expr)
-               (find-defs stmt)])
+             ([(export defs vals expr) (find-defs stmt)])
            (values
             (append export total-export)
             (append defs   total-defs)
-            (append vals total-values)
-            (cons   expr   total-expr)
-            )
-           )
-         )]
-         
+            (append vals   total-values)
+            (cons   expr   total-expr)))
+        )]
       [_ (values empty empty empty stx)]
       )
     )
+  
   (define (extract-defs stmt-stx)
     (define-values (exports defs vals expr) (find-defs stmt-stx))
     (define export-stx
@@ -124,6 +117,11 @@
           empty
           (list `(provide ,@exports))
           ))
-    (list export-stx defs vals expr)
+    (define expr-stx
+      (if (equal? '· (syntax-e expr))
+          empty
+          (list expr)))
+    
+    (list export-stx defs vals expr-stx)
     )
   )

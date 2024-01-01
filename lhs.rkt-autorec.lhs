@@ -6,12 +6,6 @@
   (equal? 1 (array-dims a))
   )
 
-(define-match-expander lhsComp
-  (lambda (stx)
-    (with-pattern
-        ([(_ PATTERN) stx])
-      #'PATTERN)))
-
 (define-match-expander nothing->underscore
   (lambda (stx)
     (pattern-case stx 
@@ -49,12 +43,13 @@
 
 (define-match-expander lhsNS
   (lambda (stx)
-    (with-pattern
-        ([(_ ELTS ...) stx]
-         [(BINDINGS ...)
-          (pattern-case-filter #'(ELTS ...)
-            [(BIND-ID KEY)
-             #'((quote KEY) BIND-ID)]
-            [ID-KEY
-             #'((quote ID-KEY) ID-KEY)])])
-      #'(hash-table BINDINGS ...))))
+    (syntax-case stx ()
+      [(_ elts ...)
+       #'(lhsNS () (elts ...))]
+      [(_ (binds ...) ((bind-id key) rest ...))
+       #'(lhsNS (((quote key) bind-id) binds ...) (rest ...))]
+      [(_ (binds ...) (id-key rest ...))
+       #'(lhsNS (((quote id-key) id-key) binds ...) (rest ...))]
+      [(_ (binds ...) ())
+       #'(hash-table binds ...)]
+      )))

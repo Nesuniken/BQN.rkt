@@ -67,7 +67,10 @@
 (define BQN∾
   (case-lambda
     [(x) (array-all-fold x (λ (a b) (array-append* (list a b))))]
-    [(x w) (array-append* (list x w))]))
+    [(x w) (array-append*
+            (list (to-array x)
+                  (to-array w))
+            )]))
 
 (define BQN≍
   (case-lambda

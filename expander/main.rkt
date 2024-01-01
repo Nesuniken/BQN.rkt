@@ -1,7 +1,8 @@
 #lang racket
 (require
   "assign.rkt" "blocks.rkt" "../lhs.rkt"
-  racket/stxparam math/array br/macro 
+  (only-in "../primitives/utilities.rkt" to-func apply-mod)
+  racket/stxparam math/array br/macro
   "../primitives/primitives.rkt")
 
 (define-macro-cases Derv
@@ -11,6 +12,11 @@
   )
 
 (define-macro Fork #'Train)
+
+(define (3-train L T R)
+  (case-lambda
+    [(x )  (T (R x  ) (L x  ))]
+    [(x w) (T (R x w) (L x w))]))
 
 (define-macro-cases Train
   [(Train   T) #'T]
@@ -22,15 +28,18 @@
    #'(BQN∘  T R)]
   
   [(Train L T R)
-   #'(case-lambda
-       [(x  ) (T (R x  ) (L x  ))]
-       [(x w) (T (R x w) (L x w))])]
+   #'((apply-mod 3-train) L T R)]
   )
 
+(define (apply-bqn-func F x [w (void)])
+  (cond
+    [(void? x) (void)]
+    [(void? w) (F x)]
+    [(F x w)]))
+
 (define-macro-cases arg
-  [(arg · F X) #'(F X)]
-  [(arg   F X) #'(F X)]
-  [(arg W F X) #'(F X W)]
+  [(arg   F X) #'(apply-bqn-func F X)]
+  [(arg W F X) #'(apply-bqn-func F X W)]
   )
 
 (define-macro a-list  #'strand)
@@ -73,15 +82,9 @@
 (define-macro (program EXPR ...)
   #'(begin EXPR ...))
 
-(define (to-func x)
-  (if (procedure? x)
-      x
-      (const x)))
-
-(define-macro-cases bqn-app
-  [(bqn-app ID X void) #'(bqn-app ID X)]
-  [(bqn-app ID ARGS ...)
-   #'((to-func ID) ARGS ...)])
+(define-macro (bqn-app ID ARGS ...)
+  #'(#%app (to-func ID) ARGS ...)
+  )
 
 (provide
  #%top #%datum #%top-interaction
