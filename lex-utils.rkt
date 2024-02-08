@@ -50,8 +50,9 @@
   (bqn-real (: -? (or #\∞ (: #\π exp))))
   (rkt-real (: decimal exp))
   (real (or bqn-real rkt-real))
-  
-  (rkt-number (: rkt-real (? (: (char-set "Ii") rkt-real))))
+
+  (rough-number (: (or notation (/ "09")) (* (or trailing-char #\.))))
+  (rkt-number (: rkt-real (? (: (char-set "Ii") rkt-real)))) 
   (number (: real (? (: (char-set "Ii") real))))
   
   (string (: #\" (* (or (~ #\") (: #\" #\"))) #\"))
@@ -59,32 +60,36 @@
   (special-sub  (char-set "𝕨𝕤𝕩𝕗𝕘𝕣"))
   (special-func (char-set "𝕎𝕊𝕏𝔽𝔾"))
 
-  (•? (? #\•))
+  (system-dot #\•)
+  (system? (? system-dot))
   (kt (: (* #\_) (char-set "Kk") (* #\_) (char-set "Tt")))
   (rkt-id
    (+ (~ #\space #\newline #\tab #\( #\) #\[ #\] #\{ #\} #\⟨ #\⟩ #\" #\, #\' #\` #\; #\| #\\)))
 
-  (trailing-chars (* (or notation #\_ (/ "AZaz09"))))
+  (trailing-char (or notation #\_ (/ "AZaz09")))
 
-  (rkt-sub (: #\• (? (: #\r kt)) #\. rkt-id))
-  (sub-name (: •? (: (/ "az") trailing-chars)))
-  (subject (or sub-name special-sub rkt-sub))
+  (rkt-sub (: system-dot (? (: #\r kt)) #\. rkt-id))
+  (sub-id  (: (/ "az") (* trailing-char)))
+  (system-sub (: system-dot sub-id))
+  (subject (or sub-id system-sub special-sub rkt-sub))
 
   (rkt-func (: "•R" kt #\. rkt-id))
-  (func-name (: •? (/ "AZ") trailing-chars))
+  (func-id (: (/ "AZ") (* trailing-char)))
+  (system-func (: system-dot func-id))
   (func-prim (char-set "⍳+-×÷⋆√⌊⌈|¬∧∨<>≠=≤≥≡≢⊣⊢⥊∾≍⋈↑↓↕«»⌽⍉/⍋⍒⊏⊑⊐⊒∊⍷⊔!"))
-  (func (or func-prim func-name special-func rkt-func))
+  (func (or func-prim func-id system-func special-func rkt-func))
 
   (rkt-1mod (: "•_" (char-set "Rr") kt #\. rkt-id))
-  (1mod-id   (: (+ #\_) (/ "AZaz") (? trailing-chars (/ "AZaz09"))))
-  (1mod-name (: •? 1mod-id))
+  (1mod-id   (: (+ #\_) (/ "AZaz") (? (* trailing-char) (/ "AZaz09"))))
+  (system-1mod (: system-dot 1mod-id))
   (1mod-prim (char-set "`˙˘¨⌜´˝⁼˜"))
-  (1mod (or "_𝕣" 1mod-prim 1mod-name rkt-1mod))
+  (1mod (or "_𝕣" 1mod-prim system-1mod rkt-1mod))
 
   (rkt-2mod (: "•_" (char-set "Rr") kt "_." rkt-id))
-  (2mod-name (: (+ #\_) (/ "AZaz") trailing-chars #\_))
+  (2mod-id (: (+ #\_) (/ "AZaz") (* trailing-char) #\_))
+  (system-2mod (: system-dot 2mod-id))
   (2mod-prim (char-set "∘○⊸⟜⌾⊘◶⎉⚇⍟⎊"))
-  (2mod (or "_𝕣_" 2mod-prim 2mod-name rkt-2mod))
+  (2mod (or "_𝕣_" 2mod-prim 2mod-id system-2mod rkt-2mod))
 
   (notation (char-set "π∞¯"))
   (brackets (char-set "⟨⟩[](){}"))

@@ -19,7 +19,6 @@ stmt    : nothing | expr ;| [lhs-elt] "⇐"
 
 def : "←" | "⇐"
 @assign: def | "↩"
-
 bqn-req : /"•Require" (RKT-STRING | SUB-CUSTOM)
 
 2Mod : [atom /"."] 2MOD-CUSTOM | 2mod-literal | 2M-Block
@@ -30,8 +29,6 @@ Func : [atom /"."] FUNC-CUSTOM | func-literal | FuncBlock
      | /"(" (Func     | FuncExpr) /")"
 @atom : [atom /"."] SUB-CUSTOM  | sub-literal | subBlock
      | /"(" (@subject | subExpr)  /")" | a-list | a-merge
-
-ns : [atom /"."]
 
 a-list   : /"⟨" /["⋄"] [(expr /"⋄")* expr /["⋄"]] /"⟩"
 a-merge  : /"[" /["⋄"]  (expr /"⋄")* expr /["⋄"]  /"]"
